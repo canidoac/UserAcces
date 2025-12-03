@@ -6,7 +6,6 @@
     <description>Extensión para alimentar parámetros automáticamente al abrir el dashboard</description>
     <author name="Your Company" email="info@yourcompany.com" organization="Your Company" website="https://www.yourcompany.com"/>
     <min-api-version>1.4</min-api-version>
-    <!-- Corregir URL de index.html en lugar de main.html -->
     <source-location>
       <url>https://canidoac.github.io/UserAcces/index.html</url>
     </source-location>
@@ -16,9 +15,7 @@
     <permissions>
       <permission>full data</permission>
     </permissions>
-    <context-menu>
-      <configure-context-menu-item />
-    </context-menu>
+    <!-- Eliminado <context-menu> porque usamos botón de configuración -->
   </dashboard-extension>
   <resources>
     <resource id="name">
