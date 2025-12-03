@@ -1,17 +1,42 @@
 let availableParameters = []
 let mappings = []
-const tableau = window.tableau // Declare the tableau variable
+let tableau = null // Declare the tableau variable
 
-// Inicializar diálogo de configuración
-tableau.extensions
-  .initializeDialogAsync()
+function waitForTableau() {
+  return new Promise((resolve, reject) => {
+    if (window.tableau) {
+      resolve(window.tableau)
+    } else {
+      let attempts = 0
+      const checkInterval = setInterval(() => {
+        attempts++
+        if (window.tableau) {
+          clearInterval(checkInterval)
+          resolve(window.tableau)
+        } else if (attempts > 50) {
+          clearInterval(checkInterval)
+          reject(new Error("Tableau API no se cargó"))
+        }
+      }, 100)
+    }
+  })
+}
+
+waitForTableau()
+  .then((tableauResult) => {
+    tableau = tableauResult // Assign the tableau variable
+    console.log("[v0] Tableau API cargada, inicializando diálogo...")
+    return tableau.extensions.initializeDialogAsync()
+  })
   .then(() => {
     console.log("[v0] Diálogo de configuración inicializado")
-    loadAvailableData()
+    return loadAvailableData()
+  })
+  .then(() => {
     loadCurrentConfiguration()
   })
   .catch((error) => {
-    console.error("[v0] Error inicializando diálogo:", error)
+    console.error("[v0] Error en inicialización:", error)
     alert("Error al inicializar configuración: " + error.message)
   })
 
@@ -19,30 +44,47 @@ tableau.extensions
 async function loadAvailableData() {
   try {
     console.log("[v0] Cargando datos disponibles...")
-    const dashboard = tableau.extensions.dashboardContent.dashboard
+    const dashboard = window.tableau.extensions.dashboardContent.dashboard
 
-    // Cargar fuentes de datos de todos los worksheets
     const dataSourceSelect = document.getElementById("dataSource")
-    const allDataSources = new Set()
+    const allDataSources = []
+
+    console.log("[v0] Total worksheets:", dashboard.worksheets.length)
 
     for (const worksheet of dashboard.worksheets) {
-      console.log("[v0] Worksheet:", worksheet.name)
-      const dataSources = await worksheet.getDataSourcesAsync()
-      dataSources.forEach((ds) => {
-        console.log("[v0] Fuente de datos:", ds.name)
-        allDataSources.add(ds.name)
-      })
+      console.log("[v0] Analizando worksheet:", worksheet.name)
+      try {
+        const dataSources = await worksheet.getDataSourcesAsync()
+        console.log("[v0] Fuentes de datos en", worksheet.name, ":", dataSources.length)
+
+        dataSources.forEach((ds) => {
+          console.log("[v0] Fuente de datos encontrada:", ds.name)
+          // Evitar duplicados
+          if (!allDataSources.find((existing) => existing.name === ds.name)) {
+            allDataSources.push(ds)
+          }
+        })
+      } catch (err) {
+        console.error("[v0] Error obteniendo fuentes de datos del worksheet:", err)
+      }
     }
 
-    // Agregar al select
-    allDataSources.forEach((dsName) => {
-      const option = document.createElement("option")
-      option.value = dsName
-      option.textContent = dsName
-      dataSourceSelect.appendChild(option)
-    })
+    console.log("[v0] Total fuentes de datos únicas:", allDataSources.length)
 
-    console.log("[v0] Total fuentes de datos:", allDataSources.size)
+    if (allDataSources.length === 0) {
+      console.warn("[v0] No se encontraron fuentes de datos")
+      const option = document.createElement("option")
+      option.value = ""
+      option.textContent = "No hay fuentes de datos disponibles"
+      dataSourceSelect.appendChild(option)
+    } else {
+      allDataSources.forEach((ds) => {
+        const option = document.createElement("option")
+        option.value = ds.name
+        option.textContent = ds.name
+        dataSourceSelect.appendChild(option)
+      })
+    }
 
     // Cargar parámetros disponibles
     availableParameters = await dashboard.getParametersAsync()
