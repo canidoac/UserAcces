@@ -3,31 +3,56 @@ let mappings = []
 const tableau = window.tableau // Declare the tableau variable
 
 // Inicializar diálogo de configuración
-tableau.extensions.initializeDialogAsync().then(() => {
-  loadAvailableData()
-  loadCurrentConfiguration()
-})
+tableau.extensions
+  .initializeDialogAsync()
+  .then(() => {
+    console.log("[v0] Diálogo de configuración inicializado")
+    loadAvailableData()
+    loadCurrentConfiguration()
+  })
+  .catch((error) => {
+    console.error("[v0] Error inicializando diálogo:", error)
+    alert("Error al inicializar configuración: " + error.message)
+  })
 
 // Cargar datos disponibles (fuentes de datos y parámetros)
 async function loadAvailableData() {
   try {
+    console.log("[v0] Cargando datos disponibles...")
     const dashboard = tableau.extensions.dashboardContent.dashboard
 
-    // Cargar fuentes de datos
-    const dataSources = await dashboard.worksheets[0].getDataSourcesAsync()
+    // Cargar fuentes de datos de todos los worksheets
     const dataSourceSelect = document.getElementById("dataSource")
+    const allDataSources = new Set()
 
-    dataSources.forEach((ds) => {
+    for (const worksheet of dashboard.worksheets) {
+      console.log("[v0] Worksheet:", worksheet.name)
+      const dataSources = await worksheet.getDataSourcesAsync()
+      dataSources.forEach((ds) => {
+        console.log("[v0] Fuente de datos:", ds.name)
+        allDataSources.add(ds.name)
+      })
+    }
+
+    // Agregar al select
+    allDataSources.forEach((dsName) => {
       const option = document.createElement("option")
-      option.value = ds.name
-      option.textContent = ds.name
+      option.value = dsName
+      option.textContent = dsName
       dataSourceSelect.appendChild(option)
     })
 
+    console.log("[v0] Total fuentes de datos:", allDataSources.size)
+
     // Cargar parámetros disponibles
     availableParameters = await dashboard.getParametersAsync()
+    console.log(
+      "[v0] Parámetros disponibles:",
+      availableParameters.map((p) => p.name),
+    )
   } catch (error) {
     console.error("[v0] Error cargando datos:", error)
+    alert("Error al cargar datos: " + error.message)
   }
 }
 
@@ -100,6 +125,10 @@ function saveConfiguration() {
   const dataSourceName = document.getElementById("dataSource").value
   const usernameColumn = document.getElementById("usernameColumn").value
 
+  console.log("[v0] Guardando configuración...")
+  console.log("[v0] Fuente de datos:", dataSourceName)
+  console.log("[v0] Columna username:", usernameColumn)
+
   if (!dataSourceName) {
     alert("Debes seleccionar una fuente de datos")
     return
@@ -118,6 +147,8 @@ function saveConfiguration() {
     }
   })
 
+  console.log("[v0] Mapeos:", mappings)
+
   if (mappings.length === 0) {
     alert("Debes agregar al menos un mapeo de columna a parámetro")
     return
@@ -128,9 +159,16 @@ function saveConfiguration() {
   tableau.extensions.settings.set("usernameColumn", usernameColumn)
   tableau.extensions.settings.set("parameterMappings", JSON.stringify(mappings))
 
-  tableau.extensions.settings.saveAsync().then(() => {
-    tableau.extensions.ui.closeDialog("saved")
-  })
+  tableau.extensions.settings
+    .saveAsync()
+    .then(() => {
+      console.log("[v0] Configuración guardada exitosamente")
+      tableau.extensions.ui.closeDialog("saved")
+    })
+    .catch((error) => {
+      console.error("[v0] Error guardando configuración:", error)
+      alert("Error al guardar: " + error.message)
+    })
 }
 
 // Cerrar diálogo
