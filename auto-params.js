@@ -28,9 +28,18 @@ tableau.extensions.initializeAsync({ configure: configure }).then(
     addLog("Extensión inicializada correctamente", "success")
 
     // Cargar configuración guardada
-    loadConfiguration()
+    const hasConfig = loadConfiguration()
 
-    // Ejecutar carga automática de parámetros con timeout
+    console.log("[v0] ¿Tiene configuración?", hasConfig)
+
+    // Si no hay configuración, mostrar botón inmediatamente
+    if (!hasConfig) {
+      console.log("[v0] No hay configuración, mostrando botón")
+      showConfigureButton()
+      return
+    }
+
+    // Si hay configuración, ejecutar carga automática
     setTimeout(() => {
       autoLoadParameters().catch((error) => {
         console.error("[v0] Error no capturado:", error)
@@ -283,11 +292,14 @@ function loadConfiguration() {
 
       console.log("[v0] Configuración cargada:", CONFIG)
       addLog("Configuración cargada desde settings", "success")
+      return true
     } else {
       console.log("[v0] No hay configuración guardada")
+      return false
     }
   } catch (error) {
     console.error("[v0] Error cargando configuración:", error)
+    return false
   }
 }
 
