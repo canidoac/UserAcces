@@ -20,32 +20,49 @@ const infoBox = document.getElementById("infoBox")
 const configureBtn = document.getElementById("configureBtn")
 const logContainer = document.getElementById("logContainer")
 
+// Verificar que tableau esté disponible
+if (typeof tableau === "undefined") {
+  console.error("[v0] ERROR: La API de Tableau no está cargada")
+  document.getElementById("statusTitle").textContent = "Error de API"
+  document.getElementById("statusSubtitle").textContent = "La API de Tableau no se cargó correctamente"
+  throw new Error("Tableau API no disponible")
+}
+
 // Inicializar extensión
-tableau.extensions.initializeAsync({ configure: configure }).then(
+console.log("[v0] Iniciando inicialización de extensión...")
+tableau.extensions.initializeAsync().then(
   () => {
     startTime = Date.now()
     console.log("[v0] Extensión inicializada correctamente")
     addLog("Extensión inicializada correctamente", "success")
 
-    // Cargar configuración guardada
-    const hasConfig = loadConfiguration()
+    // Siempre habilitar el botón de configuración desde el inicio
+    configureBtn.style.display = "block"
+    configureBtn.onclick = configure
 
-    console.log("[v0] ¿Tiene configuración?", hasConfig)
+    try {
+      // Cargar configuración guardada
+      const hasConfig = loadConfiguration()
 
-    // Si no hay configuración, mostrar botón inmediatamente
-    if (!hasConfig) {
-      console.log("[v0] No hay configuración, mostrando botón")
-      showConfigureButton()
-      return
-    }
+      console.log("[v0] ¿Tiene configuración?", hasConfig)
 
-    // Si hay configuración, ejecutar carga automática
-    setTimeout(() => {
+      // Si no hay configuración, mostrar mensaje
+      if (!hasConfig) {
+        console.log("[v0] No hay configuración, esperando configuración del usuario")
+        showConfigureButton()
+        return
+      }
+
+      // Si hay configuración, ejecutar carga automática
+      console.log("[v0] Configuración encontrada, iniciando carga automática")
       autoLoadParameters().catch((error) => {
         console.error("[v0] Error no capturado:", error)
         showError("Error inesperado: " + error.message)
       })
-    }, 100)
+    } catch (error) {
+      console.error("[v0] Error en proceso de inicialización:", error)
+      showError("Error al procesar configuración: " + error.message)
+    }
   },
   (error) => {
     console.error("[v0] Error al inicializar:", error)
@@ -261,20 +278,34 @@ async function feedParameters(userDataRow, dataSource) {
 
 // Configuración de la extensión
 function configure() {
+  console.log("[v0] Abriendo diálogo de configuración...")
   const popupUrl = window.location.href.replace("index.html", "config.html")
+  console.log("[v0] URL de configuración:", popupUrl)
+
+  addLog("Abriendo ventana de configuración...", "info")
 
   tableau.extensions.ui
     .displayDialogAsync(popupUrl, "", {
-      height: 500,
-      width: 600,
+      height: 600,
+      width: 700,
     })
     .then((closePayload) => {
+      console.log("[v0] Configuración guardada, recargando...")
+      addLog("Configuración guardada exitosamente", "success")
       // Recargar configuración y ejecutar de nuevo
-      loadConfiguration()
-      autoLoadParameters()
+      setTimeout(() => {
+        window.location.reload()
+      }, 500)
     })
     .catch((error) => {
-      addLog("Configuración cancelada", "warning")
+      // Esto es normal si el usuario cierra la ventana
+      if (error.toString().includes("canceled")) {
+        console.log("[v0] Usuario canceló la configuración")
+        addLog("Configuración cancelada por el usuario", "warning")
+      } else {
+        console.error("[v0] Error en configuración:", error)
+        addLog("Error al abrir configuración: " + error.message, "error")
+      }
     })
 }
 
