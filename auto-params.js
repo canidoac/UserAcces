@@ -30,7 +30,12 @@ if (typeof tableau === "undefined") {
 
 // Inicializar extensión
 console.log("[v0] Iniciando inicialización de extensión...")
-tableau.extensions.initializeAsync().then(
+
+const initOptions = {
+  configure: configure,
+}
+
+tableau.extensions.initializeAsync(initOptions).then(
   () => {
     startTime = Date.now()
     console.log("[v0] Extensión inicializada correctamente")
