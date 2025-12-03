@@ -1,16 +1,17 @@
 let availableParameters = []
 let mappings = []
-let tableau = null // Declare the tableau variable
+let tableau = null
+let dashboard = null
 
 function waitForTableau() {
   return new Promise((resolve, reject) => {
-    if (window.tableau) {
+    if (window.tableau && window.tableau.extensions) {
       resolve(window.tableau)
     } else {
       let attempts = 0
       const checkInterval = setInterval(() => {
         attempts++
-        if (window.tableau) {
+        if (window.tableau && window.tableau.extensions) {
           clearInterval(checkInterval)
           resolve(window.tableau)
         } else if (attempts > 50) {
@@ -24,12 +25,27 @@ function waitForTableau() {
 
 waitForTableau()
   .then((tableauResult) => {
-    tableau = tableauResult // Assign the tableau variable
+    tableau = tableauResult
     console.log("[v0] Tableau API cargada, inicializando diálogo...")
     return tableau.extensions.initializeDialogAsync()
   })
   .then(() => {
     console.log("[v0] Diálogo de configuración inicializado")
+    const payloadString = tableau.extensions.settings.get("dashboard-payload")
+    if (payloadString) {
+      const payload = JSON.parse(payloadString)
+      console.log("[v0] Dashboard payload recibido:", payload)
+    }
+
+    if (window.parent && window.parent.tableau && window.parent.tableau.extensions) {
+      dashboard = window.parent.tableau.extensions.dashboardContent.dashboard
+      console.log("[v0] Dashboard obtenido del parent")
+    } else {
+      // Fallback: intentar obtener del contexto actual
+      dashboard = tableau.extensions.dashboardContent.dashboard
+      console.log("[v0] Dashboard obtenido del contexto actual")
+    }
+
     return loadAvailableData()
   })
   .then(() => {
@@ -40,11 +56,13 @@ waitForTableau()
     alert("Error al inicializar configuración: " + error.message)
   })
 
-// Cargar datos disponibles (fuentes de datos y parámetros)
 async function loadAvailableData() {
   try {
     console.log("[v0] Cargando datos disponibles...")
-    const dashboard = window.tableau.extensions.dashboardContent.dashboard
+
+    if (!dashboard) {
+      throw new Error("No se pudo acceder al dashboard")
+    }
 
     const dataSourceSelect = document.getElementById("dataSource")
     const allDataSources = []
@@ -59,13 +77,12 @@ async function loadAvailableData() {
 
         dataSources.forEach((ds) => {
           console.log("[v0] Fuente de datos encontrada:", ds.name)
-          // Evitar duplicados
           if (!allDataSources.find((existing) => existing.name === ds.name)) {
             allDataSources.push(ds)
           }
         })
       } catch (err) {
-        console.error("[v0] Error obteniendo fuentes de datos del worksheet:", err)
+        console.error("[v0] Error obteniendo fuentes de datos del worksheet:", worksheet.name, err)
       }
     }
 
@@ -86,7 +103,6 @@ async function loadAvailableData() {
       })
     }
 
-    // Cargar parámetros disponibles
     availableParameters = await dashboard.getParametersAsync()
     console.log(
       "[v0] Parámetros disponibles:",
@@ -109,7 +125,6 @@ function loadCurrentConfiguration() {
     mappings = JSON.parse(settings.parameterMappings || "[]")
     mappings.forEach((mapping) => addMapping(mapping))
   } else {
-    // Agregar un mapeo vacío por defecto
     addMapping()
   }
 }
@@ -176,7 +191,6 @@ function saveConfiguration() {
     return
   }
 
-  // Recopilar mapeos
   const mappingDivs = document.querySelectorAll(".mapping-section")
   mappings = []
 
@@ -196,7 +210,6 @@ function saveConfiguration() {
     return
   }
 
-  // Guardar en settings
   tableau.extensions.settings.set("dataSourceName", dataSourceName)
   tableau.extensions.settings.set("usernameColumn", usernameColumn)
   tableau.extensions.settings.set("parameterMappings", JSON.stringify(mappings))
