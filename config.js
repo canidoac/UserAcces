@@ -149,7 +149,28 @@ async function loadColumnsFromDataSource(dataSourceName, allDataSources) {
     updateColumnDropdowns()
   } catch (error) {
     console.error("[v0] Error cargando columnas:", error)
-    alert("Error al cargar columnas: " + error.message)
+    try {
+      console.log("[v0] Intentando método alternativo para obtener columnas...")
+      const selectedDataSource = allDataSources.find((ds) => ds.name === dataSourceName)
+
+      // Buscar el worksheet que contiene esta fuente de datos
+      for (const worksheet of dashboard.worksheets) {
+        const dataSources = await worksheet.getDataSourcesAsync()
+        const matchingDs = dataSources.find((ds) => ds.name === dataSourceName)
+
+        if (matchingDs) {
+          // Obtener datos desde el worksheet usando getSummaryDataAsync
+          const summaryData = await worksheet.getSummaryDataAsync()
+          availableColumns = summaryData.columns.map((c) => c.fieldName)
+          console.log("[v0] Columnas cargadas con método alternativo:", availableColumns)
+          updateColumnDropdowns()
+          return
+        }
+      }
+    } catch (altError) {
+      console.error("[v0] Error con método alternativo:", altError)
+      alert("Error al cargar columnas: " + error.message + ". Verifica que la fuente de datos tenga datos.")
+    }
   }
 }
 
