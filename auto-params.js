@@ -176,11 +176,7 @@ async function getFilteredUserData(dataSource, username) {
 
     addLog("Obteniendo datos (máximo 100 registros)...", "info")
 
-    const dataTable = await logicalTable.getDataAsync({
-      maxRows: 100,
-      ignoreSelection: true,
-      includeAllColumns: true,
-    })
+    const dataTable = await logicalTable.getDataAsync()
 
     console.log("[v0] Datos obtenidos, filas:", dataTable.data.length)
     console.log(
@@ -226,9 +222,8 @@ async function feedParameters(userDataRow, dataSource) {
     )
     console.log("[v0] Mapeos configurados:", CONFIG.parameterMappings)
 
-    // Obtener nombres de columnas
     const logicalTables = await dataSource.getLogicalTablesAsync()
-    const dataTable = await logicalTables[0].getDataAsync({ maxRows: 1 })
+    const dataTable = await logicalTables[0].getDataAsync()
     const columnNames = dataTable.columns.map((c) => c.fieldName)
 
     console.log("[v0] Columnas disponibles:", columnNames)

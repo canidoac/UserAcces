@@ -2,6 +2,7 @@ let availableParameters = []
 let mappings = []
 let tableau = null
 let dashboard = null
+let availableColumns = []
 
 function waitForTableau() {
   return new Promise((resolve, reject) => {
@@ -103,6 +104,15 @@ async function loadAvailableData() {
       })
     }
 
+    dataSourceSelect.addEventListener("change", async (e) => {
+      const selectedDataSourceName = e.target.value
+      if (selectedDataSourceName) {
+        await loadColumnsFromDataSource(selectedDataSourceName, allDataSources)
+      } else {
+        availableColumns = []
+      }
+    })
+
     availableParameters = await dashboard.getParametersAsync()
     console.log(
       "[v0] Parámetros disponibles:",
@@ -114,6 +124,69 @@ async function loadAvailableData() {
   }
 }
 
+async function loadColumnsFromDataSource(dataSourceName, allDataSources) {
+  try {
+    console.log("[v0] Cargando columnas de:", dataSourceName)
+
+    const selectedDataSource = allDataSources.find((ds) => ds.name === dataSourceName)
+    if (!selectedDataSource) {
+      console.error("[v0] Fuente de datos no encontrada")
+      return
+    }
+
+    const logicalTables = await selectedDataSource.getLogicalTablesAsync()
+    if (logicalTables.length === 0) {
+      console.warn("[v0] No hay tablas lógicas en la fuente de datos")
+      return
+    }
+
+    const dataTable = await logicalTables[0].getDataAsync()
+    availableColumns = dataTable.columns.map((c) => c.fieldName)
+
+    console.log("[v0] Columnas cargadas:", availableColumns)
+
+    // Actualizar todos los dropdowns de columnas existentes
+    updateColumnDropdowns()
+  } catch (error) {
+    console.error("[v0] Error cargando columnas:", error)
+    alert("Error al cargar columnas: " + error.message)
+  }
+}
+
+function updateColumnDropdowns() {
+  // Actualizar columna de username
+  const usernameSelect = document.getElementById("usernameColumn")
+  const currentUsernameValue = usernameSelect.value
+  usernameSelect.innerHTML = '<option value="">Seleccionar...</option>'
+
+  availableColumns.forEach((columnName) => {
+    const option = document.createElement("option")
+    option.value = columnName
+    option.textContent = columnName
+    if (columnName === currentUsernameValue || columnName.toLowerCase() === "username") {
+      option.selected = true
+    }
+    usernameSelect.appendChild(option)
+  })
+
+  // Actualizar columnas en mapeos
+  const columnSelects = document.querySelectorAll(".column-name")
+  columnSelects.forEach((select) => {
+    const currentValue = select.value
+    select.innerHTML = '<option value="">Seleccionar...</option>'
+
+    availableColumns.forEach((columnName) => {
+      const option = document.createElement("option")
+      option.value = columnName
+      option.textContent = columnName
+      if (columnName === currentValue) {
+        option.selected = true
+      }
+      select.appendChild(option)
+    })
+  })
+}
+
 // Cargar configuración actual
 function loadCurrentConfiguration() {
   const settings = tableau.extensions.settings.getAll()
@@ -123,7 +196,15 @@ function loadCurrentConfiguration() {
     document.getElementById("usernameColumn").value = settings.usernameColumn || "username"
 
     mappings = JSON.parse(settings.parameterMappings || "[]")
-    mappings.forEach((mapping) => addMapping(mapping))
+
+    const dataSourceSelect = document.getElementById("dataSource")
+    const event = new Event("change")
+    dataSourceSelect.dispatchEvent(event)
+
+    // Esperar un poco para que las columnas se carguen antes de agregar mapeos
+    setTimeout(() => {
+      mappings.forEach((mapping) => addMapping(mapping))
+    }, 500)
   } else {
     addMapping()
   }
@@ -136,12 +217,22 @@ function addMapping(existingMapping = null) {
 
   const mappingDiv = document.createElement("div")
   mappingDiv.className = "mapping-section"
+
   mappingDiv.innerHTML = `
     <div style="display: flex; gap: 10px; align-items: end;">
       <div style="flex: 1;">
         <label>Columna de Datos:</label>
-        <input type="text" class="column-name" placeholder="Ej: rol, region, area" 
-               value="${existingMapping ? existingMapping.columnName : ""}">
+        <select class="column-name">
+          <option value="">Seleccionar...</option>
+          ${availableColumns
+            .map(
+              (col) =>
+                `<option value="${col}" ${existingMapping && existingMapping.columnName === col ? "selected" : ""}>
+              ${col}
+            </option>`,
+            )
+            .join("")}
+        </select>
       </div>
       <div style="flex: 1;">
         <label>Parámetro de Tableau:</label>
