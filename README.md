@@ -12,7 +12,31 @@ Extensión que alimenta parámetros automáticamente al abrir un dashboard de Ta
 
 ## Instalación
 
-### 1. Configurar el servidor local
+### Opción 1: GitHub Pages (Recomendado para Producción)
+
+La extensión está alojada en:
+\`\`\`
+https://canidoac.github.io/UserAcces/
+\`\`\`
+
+**Para usar en Tableau Desktop:**
+
+1. En Tableau Desktop, abre tu dashboard
+2. Arrastra un objeto "Extension" al dashboard
+3. Haz clic en "Access Local Extensions"
+4. Pega esta URL o navega al archivo:
+\`\`\`
+https://canidoac.github.io/UserAcces/UserAcces.trex
+\`\`\`
+
+**Activar GitHub Pages** (si aún no está activo):
+1. Ve a Settings > Pages en tu repositorio
+2. En Source, selecciona branch "main" y carpeta "/ (root)"
+3. Guarda y espera 2-5 minutos
+
+Ver instrucciones detalladas en: [INSTRUCCIONES_GITHUB_PAGES.md](INSTRUCCIONES_GITHUB_PAGES.md)
+
+### Opción 2: Desarrollo Local
 
 \`\`\`bash
 # Opción 1: Python (recomendado)
@@ -25,14 +49,14 @@ npx http-server -p 8000
 php -S localhost:8000
 \`\`\`
 
-### 2. Agregar extensión a Tableau
+### 3. Agregar extensión a Tableau
 
 1. Abre tu dashboard en Tableau Desktop
 2. Arrastra un objeto "Extensión" al dashboard
 3. Selecciona "Acceder a extensión local"
 4. Navega y selecciona el archivo `manifest.trex`
 
-### 3. Configurar la extensión
+### 4. Configurar la extensión
 
 1. Haz clic en "Configurar Fuente de Datos"
 2. Selecciona la fuente de datos que contiene los usuarios
@@ -104,6 +128,13 @@ Cuando estés listo para pasar a producción:
 
 ## Troubleshooting
 
+### Error 404 al cargar la extensión
+
+- Verifica que GitHub Pages esté activado en Settings > Pages
+- Espera 2-5 minutos después de activarlo o hacer push
+- Usa la URL completa: `https://canidoac.github.io/UserAcces/UserAcces.trex`
+- Limpia el caché del navegador (Ctrl+Shift+R)
+
 ### La extensión no encuentra datos del usuario
 
 - Verifica que la columna de username esté correctamente escrita
@@ -120,6 +151,19 @@ Cuando estés listo para pasar a producción:
 
 - Verifica que el nombre de la fuente de datos en la configuración sea exacto
 - Algunas fuentes tienen nombres con espacios o caracteres especiales
+
+## Estructura del Proyecto
+
+\`\`\`
+UserAcces/
+├── index.html          # Interfaz principal con logs y progreso
+├── auto-params.js      # Lógica de carga automática de parámetros
+├── config.html         # Interfaz de configuración de mapeos
+├── config.js           # Lógica de configuración
+├── UserAcces.trex      # Manifest de Tableau (apunta a GitHub Pages)
+├── .nojekyll           # Necesario para GitHub Pages
+└── README.md
+\`\`\`
 
 ## Soporte
 

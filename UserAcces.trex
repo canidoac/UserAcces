@@ -6,8 +6,9 @@
     <description>Extensión para alimentar parámetros automáticamente al abrir el dashboard</description>
     <author name="Your Company" email="info@yourcompany.com" organization="Your Company" website="https://www.yourcompany.com"/>
     <min-api-version>1.4</min-api-version>
+    <!-- Corregir URL de index.html en lugar de main.html -->
     <source-location>
-      <url>http://localhost:8000/index.html</url>
+      <url>https://canidoac.github.io/UserAcces/index.html</url>
     </source-location>
     <icon>
     iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEwAACxMBAJqcGAAAAVlpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIvPgogICA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgo=
