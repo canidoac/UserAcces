@@ -75,10 +75,11 @@ tableau.extensions.initializeAsync().then(
 async function autoLoadParameters() {
   try {
     console.log("[v0] Iniciando autoLoadParameters")
-    updateStatus("loading", "Obteniendo datos...", "Esto puede tardar unos segundos")
+    updateStatus("loading", "Paso 1/6: Iniciando...", "Cargando extensión")
 
     // 1. Obtener username del usuario actual
     console.log("[v0] Obteniendo username...")
+    updateStatus("loading", "Paso 2/6: Obteniendo usuario...", "Detectando tu usuario de Tableau")
     const username = tableau.extensions.environment.username || "Usuario Desconocido"
     console.log("[v0] Username obtenido:", username)
     addLog(`Usuario detectado: ${username}`, "success")
@@ -86,6 +87,7 @@ async function autoLoadParameters() {
 
     // 2. Verificar que existe configuración
     console.log("[v0] Verificando configuración...")
+    updateStatus("loading", "Paso 3/6: Verificando configuración...", "Cargando settings guardados")
     console.log("[v0] CONFIG:", CONFIG)
 
     if (!CONFIG.dataSourceName || CONFIG.parameterMappings.length === 0) {
@@ -97,6 +99,7 @@ async function autoLoadParameters() {
 
     // 3. Obtener la fuente de datos configurada
     console.log("[v0] Buscando fuente de datos:", CONFIG.dataSourceName)
+    updateStatus("loading", "Paso 4/6: Buscando fuente de datos...", `Conectando a: ${CONFIG.dataSourceName}`)
     const dataSource = await getDataSource(CONFIG.dataSourceName)
 
     if (!dataSource) {
@@ -106,6 +109,11 @@ async function autoLoadParameters() {
 
     // 4. Obtener datos del usuario
     console.log("[v0] Obteniendo datos del usuario...")
+    updateStatus(
+      "loading",
+      "Paso 5/6: Buscando tus datos...",
+      `Filtrando por usuario en columna ${CONFIG.usernameColumn}`,
+    )
     addLog(`Filtrando por usuario: ${username}...`, "info")
     const userData = await getFilteredUserData(dataSource, username)
 
@@ -116,6 +124,7 @@ async function autoLoadParameters() {
 
     // 5. Alimentar parámetros con los datos del usuario
     console.log("[v0] Alimentando parámetros...")
+    updateStatus("loading", "Paso 6/6: Alimentando parámetros...", "Actualizando valores de parámetros")
     const loadedParams = await feedParameters(userData[0], dataSource)
 
     const loadTime = ((Date.now() - startTime) / 1000).toFixed(2)
@@ -171,6 +180,8 @@ async function getFilteredUserData(dataSource, username) {
   try {
     console.log("[v0] Buscando worksheet que use la fuente de datos:", dataSource.name)
     addLog("Obteniendo datos de la fuente...", "info")
+    // Estado específico para búsqueda de worksheet
+    updateStatus("loading", "Paso 5a/6: Buscando worksheet...", `Localizando worksheet con datos`)
 
     const dashboard = tableau.extensions.dashboardContent.dashboard
     let worksheetWithData = null
@@ -181,6 +192,7 @@ async function getFilteredUserData(dataSource, username) {
       if (dataSources.some((ds) => ds.name === dataSource.name)) {
         worksheetWithData = worksheet
         console.log("[v0] Worksheet encontrado:", worksheet.name)
+        addLog(`Worksheet encontrado: ${worksheet.name}`, "success")
         break
       }
     }
@@ -191,12 +203,18 @@ async function getFilteredUserData(dataSource, username) {
 
     console.log("[v0] Iniciando carga incremental de datos...")
     const usernameUpper = String(username).trim().toUpperCase()
+    addLog(`Buscando usuario: "${usernameUpper}" en columna "${CONFIG.usernameColumn}"`, "info")
 
     // Cargar en lotes: 100 -> 1000 -> 10000 -> 50000
     const batchSizes = [100, 1000, 10000, 50000]
 
     for (const batchSize of batchSizes) {
       console.log(`[v0] Intentando cargar ${batchSize} filas...`)
+      updateStatus(
+        "loading",
+        `Paso 5b/6: Cargando datos (${batchSize} registros)...`,
+        `Buscando tu usuario en la base de datos`,
+      )
       addLog(`Cargando ${batchSize} registros...`, "info")
 
       const dataTable = await worksheetWithData.getSummaryDataAsync({
@@ -206,6 +224,7 @@ async function getFilteredUserData(dataSource, username) {
       })
 
       console.log(`[v0] Filas cargadas: ${dataTable.data.length}`)
+      addLog(`Filas cargadas: ${dataTable.data.length}`, "info")
 
       // Buscar el índice de la columna de username
       const usernameColumnIndex = dataTable.columns.findIndex(
@@ -213,14 +232,28 @@ async function getFilteredUserData(dataSource, username) {
       )
 
       if (usernameColumnIndex === -1) {
+        addLog(`Columnas disponibles: ${dataTable.columns.map((c) => c.fieldName).join(", ")}`, "warning")
         throw new Error(`No se encontró la columna: ${CONFIG.usernameColumn}`)
       }
+
+      console.log(`[v0] Índice de columna username: ${usernameColumnIndex}`)
+      addLog(`Buscando en columna "${CONFIG.usernameColumn}" (índice ${usernameColumnIndex})`, "info")
+
+      const sampleValues = dataTable.data
+        .slice(0, 5)
+        .map((row) => String(row[usernameColumnIndex].value).trim().toUpperCase())
+      console.log(`[v0] Primeros 5 valores en la columna:`, sampleValues)
+      addLog(`Ejemplos de valores: ${sampleValues.join(", ")}`, "info")
 
       // Buscar el usuario en este lote
       const userData = dataTable.data.filter((row) => {
         const cellValue = row[usernameColumnIndex].value
         const cellValueUpper = String(cellValue).trim().toUpperCase()
-        return cellValueUpper === usernameUpper
+        const matches = cellValueUpper === usernameUpper
+        if (matches) {
+          console.log(`[v0] MATCH ENCONTRADO: "${cellValueUpper}" === "${usernameUpper}"`)
+        }
+        return matches
       })
 
       if (userData.length > 0) {
@@ -237,15 +270,18 @@ async function getFilteredUserData(dataSource, username) {
       // Si ya cargamos todas las filas disponibles, no intentar más lotes
       if (dataTable.data.length < batchSize) {
         console.log(`[v0] Solo hay ${dataTable.data.length} filas disponibles, no hay más datos`)
+        addLog(`Tabla completa cargada (${dataTable.data.length} registros)`, "info")
         break
       }
 
       console.log(`[v0] Usuario no encontrado en ${batchSize} filas, intentando con más...`)
+      addLog(`Usuario no encontrado en ${batchSize} filas, intentando con más...`, "warning")
     }
 
     // Si llegamos aquí, no se encontró el usuario
     console.log("[v0] ❌ Usuario no encontrado después de buscar en todos los lotes")
     addLog(`⚠ No se encontró el usuario "${username}" en la columna "${CONFIG.usernameColumn}"`, "warning")
+    addLog(`💡 Username buscado (uppercase): "${usernameUpper}"`, "info")
     addLog(`💡 Verifica que tu username de Tableau coincida exactamente con un valor en la columna`, "info")
 
     return []
