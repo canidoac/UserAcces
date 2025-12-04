@@ -116,12 +116,18 @@ async function autoLoadParameters() {
 
     // 5. Alimentar parámetros con los datos del usuario
     console.log("[v0] Alimentando parámetros...")
-    const paramsLoaded = await feedParameters(userData[0], dataSource)
+    const loadedParams = await feedParameters(userData[0], dataSource)
 
-    // 6. Mostrar éxito
     const loadTime = ((Date.now() - startTime) / 1000).toFixed(2)
-    updateStatus("success", "✓ Parámetros Cargados", `${paramsLoaded} parámetros alimentados correctamente`)
-    document.getElementById("paramsCount").textContent = paramsLoaded
+
+    // Construir mensaje personalizado
+    const paramsText = loadedParams.map((p) => `${p.name}: ${p.value}`).join(", ")
+    const greeting = `Hola ${username}`
+    const message = loadedParams.length > 0 ? `Estos son tus parámetros: ${paramsText}` : "No se cargaron parámetros"
+
+    updateStatus("success", greeting, message)
+    document.getElementById("username").textContent = username
+    document.getElementById("paramsCount").textContent = loadedParams.length
     document.getElementById("loadTime").textContent = `${loadTime}s`
     infoBox.style.display = "block"
 
@@ -261,7 +267,7 @@ async function feedParameters(userDataRow, dataSource) {
 
     console.log("[v0] Columnas disponibles:", columnNames)
 
-    let paramsLoaded = 0
+    const loadedParams = []
 
     for (const mapping of CONFIG.parameterMappings) {
       try {
@@ -291,14 +297,18 @@ async function feedParameters(userDataRow, dataSource) {
         // Cambiar el valor del parámetro
         await parameter.changeValueAsync(String(value))
         addLog(`✓ Parámetro "${mapping.parameterName}" = "${value}"`, "success")
-        paramsLoaded++
+
+        loadedParams.push({
+          name: mapping.parameterName,
+          value: String(value),
+        })
       } catch (error) {
         console.error("[v0] Error en parámetro:", error)
         addLog(`✗ Error en parámetro "${mapping.parameterName}": ${error.message}`, "error")
       }
     }
 
-    return paramsLoaded
+    return loadedParams
   } catch (error) {
     console.error("[v0] Error en feedParameters:", error)
     throw error
