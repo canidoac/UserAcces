@@ -176,7 +176,7 @@ async function getFilteredUserData(dataSource, username) {
 
     addLog("Obteniendo datos (máximo 100 registros)...", "info")
 
-    const dataTable = await logicalTable.getDataAsync()
+    const dataTable = await dataSource.getLogicalTableDataAsync(logicalTable.id)
 
     console.log("[v0] Datos obtenidos, filas:", dataTable.data.length)
     console.log(
@@ -203,6 +203,9 @@ async function getFilteredUserData(dataSource, username) {
     })
 
     console.log("[v0] Registros filtrados:", userData.length)
+
+    window._cachedDataTable = dataTable
+
     return userData
   } catch (error) {
     console.error("[v0] Error al obtener datos:", error)
@@ -222,8 +225,11 @@ async function feedParameters(userDataRow, dataSource) {
     )
     console.log("[v0] Mapeos configurados:", CONFIG.parameterMappings)
 
-    const logicalTables = await dataSource.getLogicalTablesAsync()
-    const dataTable = await logicalTables[0].getDataAsync()
+    const dataTable = window._cachedDataTable
+    if (!dataTable) {
+      throw new Error("No hay datos cacheados disponibles")
+    }
+
     const columnNames = dataTable.columns.map((c) => c.fieldName)
 
     console.log("[v0] Columnas disponibles:", columnNames)
