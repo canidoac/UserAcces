@@ -169,27 +169,33 @@ async function getDataSource(dataSourceName) {
 
 async function getFilteredUserData(dataSource, username) {
   try {
-    console.log("[v0] Obteniendo tablas lógicas...")
-    const logicalTables = await dataSource.getLogicalTablesAsync()
-    console.log("[v0] Tablas lógicas:", logicalTables.length)
-
-    if (logicalTables.length === 0) {
-      throw new Error("No se encontraron tablas en la fuente de datos")
-    }
-
-    const logicalTable = logicalTables[0]
-    console.log("[v0] Usando tabla:", logicalTable.id)
-
+    console.log("[v0] Buscando worksheet que use la fuente de datos:", dataSource.name)
     addLog("Obteniendo datos de la fuente...", "info")
 
-    const options = {
-      maxRows: 10000, // Aumentar a 10000 para bases grandes
-      ignoreAliases: false,
-      ignoreSelection: true,
+    const dashboard = tableau.extensions.dashboardContent.dashboard
+    let worksheetWithData = null
+
+    // Buscar un worksheet que use esta fuente de datos
+    for (const worksheet of dashboard.worksheets) {
+      const dataSources = await worksheet.getDataSourcesAsync()
+      if (dataSources.some((ds) => ds.name === dataSource.name)) {
+        worksheetWithData = worksheet
+        console.log("[v0] Worksheet encontrado:", worksheet.name)
+        break
+      }
     }
 
-    console.log("[v0] Llamando getLogicalTableDataAsync con opciones:", options)
-    const dataTable = await dataSource.getLogicalTableDataAsync(logicalTable.id, options)
+    if (!worksheetWithData) {
+      throw new Error("No se encontró un worksheet que use esta fuente de datos")
+    }
+
+    // Obtener datos usando getSummaryDataAsync
+    console.log("[v0] Obteniendo datos del worksheet...")
+    const dataTable = await worksheetWithData.getSummaryDataAsync({
+      maxRows: 10000,
+      ignoreAliases: false,
+      ignoreSelection: true,
+    })
 
     console.log("[v0] Datos obtenidos, total filas:", dataTable.totalRowCount)
     console.log("[v0] Filas cargadas:", dataTable.data.length)
@@ -198,45 +204,69 @@ async function getFilteredUserData(dataSource, username) {
       dataTable.columns.map((c) => c.fieldName),
     )
 
+    console.log("[v0] ====== DEBUG USERNAME ======")
+    console.log("[v0] Username de Tableau Extensions API:", username)
+    console.log("[v0] Tipo de username:", typeof username)
+    console.log("[v0] Username en uppercase:", username.toUpperCase())
+    console.log("[v0] Columna configurada para username:", CONFIG.usernameColumn)
+
     // Buscar el índice de la columna de username
     const usernameColumnIndex = dataTable.columns.findIndex(
       (col) => col.fieldName.toLowerCase() === CONFIG.usernameColumn.toLowerCase(),
     )
 
     console.log("[v0] Índice columna username:", usernameColumnIndex)
-    console.log("[v0] Buscando username:", username)
-    console.log("[v0] En columna:", CONFIG.usernameColumn)
 
     if (usernameColumnIndex === -1) {
+      console.log("[v0] ❌ ERROR: Columna no encontrada")
       throw new Error(`No se encontró la columna: ${CONFIG.usernameColumn}`)
     }
 
-    addLog(`Filtrando ${dataTable.data.length} registros por username...`, "info")
+    console.log("[v0] ====== PRIMEROS 10 VALORES EN LA COLUMNA ======")
+    dataTable.data.slice(0, 10).forEach((row, index) => {
+      const value = row[usernameColumnIndex].value
+      console.log(`[v0] Fila ${index}: "${value}" (uppercase: "${String(value).trim().toUpperCase()}")`)
+    })
+
+    addLog(`Buscando "${username}" en ${dataTable.data.length} registros...`, "info")
 
     const userData = dataTable.data.filter((row) => {
       const cellValue = row[usernameColumnIndex].value
-      const cellValueStr = String(cellValue).trim().toLowerCase()
-      const usernameStr = String(username).trim().toLowerCase()
+      const cellValueUpper = String(cellValue).trim().toUpperCase()
+      const usernameUpper = String(username).trim().toUpperCase()
 
-      console.log("[v0] Comparando:", cellValueStr, "===", usernameStr)
-      return cellValueStr === usernameStr
+      const match = cellValueUpper === usernameUpper
+
+      // Solo loggear las primeras 5 comparaciones y cualquier match
+      if (dataTable.data.indexOf(row) < 5 || match) {
+        console.log(`[v0] Comparando (uppercase): "${cellValueUpper}" === "${usernameUpper}" = ${match}`)
+      }
+
+      return match
     })
 
-    console.log("[v0] Registros filtrados:", userData.length)
+    console.log("[v0] ====== RESULTADO DEL FILTRADO ======")
+    console.log("[v0] Registros encontrados:", userData.length)
 
     if (userData.length === 0) {
       addLog(`⚠ No se encontró el usuario "${username}" en la columna "${CONFIG.usernameColumn}"`, "warning")
       addLog(
-        `Primeros 5 valores en la columna: ${dataTable.data
+        `Primeros 5 valores: ${dataTable.data
           .slice(0, 5)
-          .map((r) => r[usernameColumnIndex].value)
+          .map((r) => `"${r[usernameColumnIndex].value}"`)
           .join(", ")}`,
+        "info",
+      )
+      addLog(
+        `💡 Verifica que tu username de Tableau coincida con un valor en la columna ${CONFIG.usernameColumn}`,
         "info",
       )
     } else {
       addLog(`✓ Usuario encontrado: ${userData.length} registro(s)`, "success")
+      console.log("[v0] Datos del usuario:", userData[0])
     }
 
+    // Cachear la tabla de datos para feedParameters
     window._cachedDataTable = dataTable
 
     return userData
