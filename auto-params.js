@@ -177,14 +177,16 @@ async function getFilteredUserData(dataSource, username) {
     addLog("Obteniendo datos de la fuente...", "info")
 
     const options = {
-      maxRows: 1000, // Limitar a 1000 filas para mejorar rendimiento
-      columnsToInclude: [], // Incluir todas las columnas
+      maxRows: 10000, // Aumentar a 10000 para bases grandes
+      ignoreAliases: false,
+      ignoreSelection: true,
     }
 
     console.log("[v0] Llamando getLogicalTableDataAsync con opciones:", options)
     const dataTable = await dataSource.getLogicalTableDataAsync(logicalTable.id, options)
 
-    console.log("[v0] Datos obtenidos, filas:", dataTable.data.length)
+    console.log("[v0] Datos obtenidos, total filas:", dataTable.totalRowCount)
+    console.log("[v0] Filas cargadas:", dataTable.data.length)
     console.log(
       "[v0] Columnas:",
       dataTable.columns.map((c) => c.fieldName),
@@ -196,19 +198,38 @@ async function getFilteredUserData(dataSource, username) {
     )
 
     console.log("[v0] Índice columna username:", usernameColumnIndex)
+    console.log("[v0] Buscando username:", username)
+    console.log("[v0] En columna:", CONFIG.usernameColumn)
 
     if (usernameColumnIndex === -1) {
       throw new Error(`No se encontró la columna: ${CONFIG.usernameColumn}`)
     }
 
-    // Filtrar por username
+    addLog(`Filtrando ${dataTable.data.length} registros por username...`, "info")
+
     const userData = dataTable.data.filter((row) => {
       const cellValue = row[usernameColumnIndex].value
-      console.log("[v0] Comparando:", cellValue, "con", username)
-      return cellValue === username
+      const cellValueStr = String(cellValue).trim().toLowerCase()
+      const usernameStr = String(username).trim().toLowerCase()
+
+      console.log("[v0] Comparando:", cellValueStr, "===", usernameStr)
+      return cellValueStr === usernameStr
     })
 
     console.log("[v0] Registros filtrados:", userData.length)
+
+    if (userData.length === 0) {
+      addLog(`⚠ No se encontró el usuario "${username}" en la columna "${CONFIG.usernameColumn}"`, "warning")
+      addLog(
+        `Primeros 5 valores en la columna: ${dataTable.data
+          .slice(0, 5)
+          .map((r) => r[usernameColumnIndex].value)
+          .join(", ")}`,
+        "info",
+      )
+    } else {
+      addLog(`✓ Usuario encontrado: ${userData.length} registro(s)`, "success")
+    }
 
     window._cachedDataTable = dataTable
 
