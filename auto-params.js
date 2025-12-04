@@ -174,9 +174,15 @@ async function getFilteredUserData(dataSource, username) {
     const logicalTable = logicalTables[0]
     console.log("[v0] Usando tabla:", logicalTable.id)
 
-    addLog("Obteniendo datos (máximo 100 registros)...", "info")
+    addLog("Obteniendo datos de la fuente...", "info")
 
-    const dataTable = await dataSource.getLogicalTableDataAsync(logicalTable.id)
+    const options = {
+      maxRows: 1000, // Limitar a 1000 filas para mejorar rendimiento
+      columnsToInclude: [], // Incluir todas las columnas
+    }
+
+    console.log("[v0] Llamando getLogicalTableDataAsync con opciones:", options)
+    const dataTable = await dataSource.getLogicalTableDataAsync(logicalTable.id, options)
 
     console.log("[v0] Datos obtenidos, filas:", dataTable.data.length)
     console.log(
