@@ -76,19 +76,62 @@ tableau.extensions.initializeAsync().then(
 // ============================
 async function autoLoadParameters() {
   try {
-    console.log("[v1] Iniciando autoLoadParameters")
+    console.log("[v0] Iniciando autoLoadParameters")
     updateStatus("loading", "Paso 1/6: Iniciando...", "Cargando extensión")
 
-    // 1. Obtener username del usuario actual
-    console.log("[v1] Obteniendo username...")
+    console.log("[v0] Obteniendo username...")
     updateStatus("loading", "Paso 2/6: Obteniendo usuario...", "Detectando tu usuario de Tableau")
-    const username = tableau.extensions.environment.username || "Usuario Desconocido"
-    console.log("[v1] Username obtenido:", username)
+
+    // Intentar obtener username de diferentes fuentes
+    let username = null
+
+    // Método 1: environment.username
+    if (tableau.extensions.environment && tableau.extensions.environment.username) {
+      username = tableau.extensions.environment.username
+      console.log("[v0] Username desde environment:", username)
+    }
+
+    // Método 2: Si username es vacío o "Usuario Desconocido", intentar con settings
+    if (!username || username === "Usuario Desconocido" || username.trim() === "") {
+      console.log("[v0] Username no disponible en environment, intentando obtener de dashboard...")
+
+      // Intentar obtener de un parámetro si existe
+      const dashboard = tableau.extensions.dashboardContent.dashboard
+      const parameters = await dashboard.getParametersAsync()
+
+      // Buscar un parámetro que podría contener el username
+      const userParam = parameters.find(
+        (p) =>
+          p.name.toLowerCase().includes("user") ||
+          p.name.toLowerCase().includes("username") ||
+          p.name.toLowerCase().includes("email"),
+      )
+
+      if (userParam) {
+        username = userParam.currentValue.value
+        console.log("[v0] Username desde parámetro:", username)
+      }
+    }
+
+    // Método 3: Si aún no tenemos username, mostrar error específico
+    if (!username || username === "Usuario Desconocido" || username.trim() === "") {
+      console.error("[v0] No se pudo detectar el username del usuario")
+      addLog("⚠ No se pudo detectar tu usuario automáticamente", "warning")
+      addLog("💡 Opciones:", "info")
+      addLog("1. Crea un parámetro llamado 'Username' con la función USERNAME()", "info")
+      addLog("2. Verifica que tu extensión tenga permisos en Tableau Server", "info")
+      showError(
+        "No se pudo detectar tu usuario. Por favor, crea un parámetro 'Username' con la función USERNAME() en Tableau.",
+      )
+      return
+    }
+
+    console.log("[v0] Username final detectado:", username)
     addLog(`Usuario detectado: ${username}`, "success")
     const usernameEl = document.getElementById("username")
     if (usernameEl) usernameEl.textContent = username
 
-    // 2. Verificar que existe configuración
+    // Verificar que existe configuración
     console.log("[v1] Verificando configuración...")
     updateStatus("loading", "Paso 3/6: Verificando configuración...", "Cargando settings guardados")
     console.log("[v1] CONFIG:", CONFIG)
@@ -100,7 +143,7 @@ async function autoLoadParameters() {
       return
     }
 
-    // 3. Obtener la fuente de datos configurada
+    // Obtener la fuente de datos configurada
     console.log("[v1] Buscando fuente de datos:", CONFIG.dataSourceName)
     updateStatus("loading", "Paso 4/6: Buscando fuente de datos...", `Conectando a: ${CONFIG.dataSourceName}`)
     const dataSource = await getDataSource(CONFIG.dataSourceName)
@@ -112,7 +155,7 @@ async function autoLoadParameters() {
     }
     addLog(`Fuente de datos encontrada: ${CONFIG.dataSourceName}`, "success")
 
-    // 4. Obtener datos del usuario
+    // Obtener datos del usuario
     console.log("[v1] Obteniendo datos del usuario...")
     updateStatus(
       "loading",
@@ -129,7 +172,7 @@ async function autoLoadParameters() {
     }
     addLog(`Datos del usuario obtenidos (${userData.length} registro)`, "success")
 
-    // 5. Alimentar parámetros con los datos del usuario
+    // Alimentar parámetros con los datos del usuario
     console.log("[v1] Alimentando parámetros...")
     updateStatus("loading", "Paso 6/6: Alimentando parámetros...", "Actualizando valores de parámetros")
     const loadedParams = await feedParameters(userData[0], dataSource)
