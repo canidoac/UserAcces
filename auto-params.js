@@ -1,11 +1,18 @@
 // Importar la variable tableau
 const tableau = window.tableau
 
+// MODO TESTING: Cambia esto a true para probar con un usuario específico
+const TESTING_MODE = false
+const TEST_EMAIL = "andres.canido@mercadolibre.com"
+// </CHANGE>
+
 // Configuración de la extensión
 const CONFIG = {
   dataSourceName: null, // Nombre de la fuente de datos (se configura después)
   usernameColumn: "EMAIL", // Columna que contiene el username
   parameterMappings: [], // Mapeo de columnas a parámetros
+  hideAfterLoad: false,
+  errorMessage: "",
 }
 
 // Variables de estado
@@ -176,6 +183,11 @@ async function getFilteredUserData(dataSource) {
     console.log("[v0] Obteniendo datos de la fuente...")
     addLog("Obteniendo datos de la fuente...", "info")
 
+    if (TESTING_MODE) {
+      console.log("[v0] MODO TESTING ACTIVADO - Buscando email:", TEST_EMAIL)
+      addLog(`MODO TESTING: Buscando usuario ${TEST_EMAIL}`, "warning")
+    }
+
     const dashboard = tableau.extensions.dashboardContent.dashboard
     const worksheets = dashboard.worksheets
 
@@ -194,37 +206,117 @@ async function getFilteredUserData(dataSource) {
       throw new Error("No se encontró un worksheet que use la fuente de datos configurada")
     }
 
-    // El filtro UPPER([EMAIL]) = UPPER(USERNAME()) ya se aplicó en Tableau
-    console.log("[v0] Leyendo datos ya filtrados (debería ser solo 1 registro)...")
-    addLog("Leyendo tus datos (ya filtrados por Tableau)...", "info")
+    console.log("[v0] Leyendo datos del worksheet...")
 
-    const dataTable = await worksheet.getSummaryDataAsync({
-      maxRows: 10, // Solo necesitamos 1, pero pedimos 10 por si acaso
-      ignoreSelection: true,
-    })
+    const maxRows = TESTING_MODE ? 100 : 10
+    addLog(
+      TESTING_MODE
+        ? "Leyendo datos (modo testing: buscando tu email)..."
+        : "Leyendo tus datos (ya filtrados por Tableau)...",
+      "info",
+    )
 
-    console.log("[v0] Filas obtenidas:", dataTable.data.length)
-    addLog(`Registros encontrados: ${dataTable.data.length}`, "success")
+    let dataTable = null
+    const maxRetries = 3
 
-    if (dataTable.data.length === 0) {
-      console.error("[v0] No hay datos visibles en el worksheet")
-      addLog("No hay datos visibles. Verifica que el filtro USERNAME() esté aplicado correctamente", "error")
-      return null
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[v0] Intento ${attempt}/${maxRetries} de cargar datos...`)
+        addLog(`Intento ${attempt}/${maxRetries} de cargar datos...`, "info")
+
+        // Crear promise con timeout de 10 segundos
+        const dataPromise = worksheet.getSummaryDataAsync({
+          maxRows: maxRows,
+          ignoreSelection: true,
+        })
+
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout al cargar datos")), 10000),
+        )
+
+        dataTable = await Promise.race([dataPromise, timeoutPromise])
+
+        if (dataTable && dataTable.data.length > 0) {
+          console.log("[v0] Datos cargados exitosamente")
+          break
+        } else if (attempt < maxRetries) {
+          console.log("[v0] No se obtuvieron datos, esperando 2 segundos antes de reintentar...")
+          addLog("No se obtuvieron datos, reintentando...", "warning")
+          await new Promise((resolve) => setTimeout(resolve, 2000))
+        }
+      } catch (error) {
+        console.error(`[v0] Error en intento ${attempt}:`, error)
+        if (attempt === maxRetries) {
+          throw new Error(`No se pudieron cargar los datos después de ${maxRetries} intentos: ${error.message}`)
+        }
+        addLog(`Error en intento ${attempt}, reintentando en 2 segundos...`, "warning")
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+      }
     }
 
-    const firstRow = dataTable.data[0]
+    if (!dataTable || dataTable.data.length === 0) {
+      const errorMsg =
+        CONFIG.errorMessage ||
+        "No se encontraron datos para tu usuario. Verifica que el filtro USERNAME() esté aplicado en 'Hoja 1'"
+      throw new Error(errorMsg)
+    }
+
+    console.log("[v0] Filas obtenidas:", dataTable.data.length)
+    addLog(`Registros cargados: ${dataTable.data.length}`, "success")
+
+    // En modo testing, buscar el email específico
+    let targetRow = dataTable.data[0] // Por defecto, primera fila
+
+    if (TESTING_MODE) {
+      console.log("[v0] Buscando email en los datos...")
+      const emailColumnIndex = dataTable.columns.findIndex((col) => col.fieldName === CONFIG.usernameColumn)
+
+      if (emailColumnIndex === -1) {
+        addLog(`No se encontró la columna ${CONFIG.usernameColumn}`, "error")
+        throw new Error(`Columna ${CONFIG.usernameColumn} no existe`)
+      }
+
+      console.log("[v0] Columna EMAIL en índice:", emailColumnIndex)
+
+      // Buscar la fila con el email de testing
+      const foundRow = dataTable.data.find((row) => {
+        const emailValue = row[emailColumnIndex].value
+        console.log("[v0] Comparando:", emailValue, "con", TEST_EMAIL)
+        return emailValue && emailValue.toUpperCase() === TEST_EMAIL.toUpperCase()
+      })
+
+      if (foundRow) {
+        targetRow = foundRow
+        console.log("[v0] Email encontrado en los datos!")
+        addLog(`Usuario encontrado: ${TEST_EMAIL}`, "success")
+      } else {
+        console.error("[v0] Email NO encontrado en los datos")
+        addLog(`Email ${TEST_EMAIL} no encontrado en los primeros ${maxRows} registros`, "error")
+
+        // Mostrar algunos emails de ejemplo
+        const ejemplos = dataTable.data
+          .slice(0, 5)
+          .map((row) => row[emailColumnIndex].value)
+          .join(", ")
+        console.log("[v0] Ejemplos de emails en los datos:", ejemplos)
+        addLog(`Ejemplos: ${ejemplos}`, "info")
+
+        return null
+      }
+    }
+
     const userData = {}
 
     // Convertir a objeto con nombres de columna
     dataTable.columns.forEach((column, index) => {
       const fieldName = column.fieldName
-      const value = firstRow[index].value
+      const value = targetRow[index].value
       userData[fieldName] = value
       console.log("[v0] Columna:", fieldName, "=", value)
     })
 
     console.log("[v0] Datos del usuario:", userData)
-    addLog(`Datos cargados correctamente para tu usuario`, "success")
+    addLog(`Datos cargados correctamente`, "success")
 
     return userData
   } catch (error) {
@@ -330,6 +422,8 @@ function loadConfiguration() {
       CONFIG.dataSourceName = settings.dataSourceName
       CONFIG.usernameColumn = settings.usernameColumn || "username"
       CONFIG.parameterMappings = JSON.parse(settings.parameterMappings || "[]")
+      CONFIG.hideAfterLoad = settings.hideAfterLoad === "true"
+      CONFIG.errorMessage = settings.errorMessage || ""
 
       console.log("[v1] Configuración cargada:", CONFIG)
       addLog("Configuración cargada desde settings", "success")
@@ -376,8 +470,13 @@ function updateStatus(type, title, subtitle) {
 // =========================
 function showError(message) {
   console.error("[v1]", message)
-  updateStatus("error", "Error", message)
-  addLog(`✗ ${message}`, "error")
+
+  // Si el error es sobre no encontrar usuario y hay mensaje personalizado, usarlo
+  const displayMessage =
+    message.includes("No se encontraron datos") && CONFIG.errorMessage ? CONFIG.errorMessage : message
+
+  updateStatus("error", "Error", displayMessage)
+  addLog(`✗ ${displayMessage}`, "error")
 
   configureBtn.style.display = "block"
   configureBtn.onclick = configure
@@ -408,4 +507,15 @@ function showSuccess(title, subtitle) {
   const loadTimeEl = document.getElementById("loadTime")
   if (loadTimeEl) loadTimeEl.textContent = `${((Date.now() - startTime) / 1000).toFixed(2)}s`
   if (infoBox) infoBox.style.display = "block"
+
+  // Ocultar extensión después de cargar si está configurado
+  if (CONFIG.hideAfterLoad) {
+    addLog("Ocultando extensión (configurado por usuario)...", "info")
+    setTimeout(() => {
+      const extensionObject = document.querySelector(".tab-dashboard-extension-object")
+      if (extensionObject) {
+        extensionObject.style.display = "none"
+      }
+    }, 2000)
+  }
 }

@@ -222,13 +222,16 @@ function loadCurrentConfiguration() {
     document.getElementById("dataSource").value = settings.dataSourceName
     document.getElementById("usernameColumn").value = settings.usernameColumn || "username"
 
+    // Cargar nuevas opciones
+    document.getElementById("hideAfterLoad").checked = settings.hideAfterLoad === "true"
+    document.getElementById("errorMessage").value = settings.errorMessage || ""
+
     mappings = JSON.parse(settings.parameterMappings || "[]")
 
     const dataSourceSelect = document.getElementById("dataSource")
     const event = new Event("change")
     dataSourceSelect.dispatchEvent(event)
 
-    // Esperar un poco para que las columnas se carguen antes de agregar mapeos
     setTimeout(() => {
       mappings.forEach((mapping) => addMapping(mapping))
     }, 500)
@@ -299,10 +302,14 @@ function removeMapping(button) {
 function saveConfiguration() {
   const dataSourceName = document.getElementById("dataSource").value
   const usernameColumn = document.getElementById("usernameColumn").value
+  const hideAfterLoad = document.getElementById("hideAfterLoad").checked
+  const errorMessage = document.getElementById("errorMessage").value.trim()
 
   console.log("[v0] Guardando configuración...")
   console.log("[v0] Fuente de datos:", dataSourceName)
   console.log("[v0] Columna username:", usernameColumn)
+  console.log("[v0] Ocultar después de cargar:", hideAfterLoad)
+  console.log("[v0] Mensaje de error:", errorMessage)
 
   if (!dataSourceName) {
     alert("Debes seleccionar una fuente de datos")
@@ -331,6 +338,8 @@ function saveConfiguration() {
   tableau.extensions.settings.set("dataSourceName", dataSourceName)
   tableau.extensions.settings.set("usernameColumn", usernameColumn)
   tableau.extensions.settings.set("parameterMappings", JSON.stringify(mappings))
+  tableau.extensions.settings.set("hideAfterLoad", hideAfterLoad.toString())
+  tableau.extensions.settings.set("errorMessage", errorMessage)
 
   tableau.extensions.settings
     .saveAsync()

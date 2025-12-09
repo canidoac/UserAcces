@@ -126,6 +126,31 @@
         <option value="">Primero selecciona una fuente de datos...</option>
       </select>
     </div>
+
+    <!-- Agregando opciones adicionales -->
+    <div class="form-group">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" id="hideAfterLoad" style="width: auto; cursor: pointer;">
+        <span>Ocultar extensión después de cargar parámetros</span>
+      </label>
+      <p style="color: #6b7280; font-size: 12px; margin-top: 5px; margin-left: 24px;">
+        La extensión se ocultará automáticamente una vez que los parámetros se carguen exitosamente
+      </p>
+    </div>
+
+    <div class="form-group">
+      <label for="errorMessage">Mensaje personalizado cuando no encuentra usuario:</label>
+      <input 
+        type="text" 
+        id="errorMessage" 
+        placeholder="Ej: No se encontraron datos para tu usuario. Contacta a soporte."
+        maxlength="150"
+      >
+      <p style="color: #6b7280; font-size: 12px; margin-top: 5px;">
+        Este mensaje se mostrará si no se encuentra el usuario en la fuente de datos
+      </p>
+    </div>
+    <!-- Fin de opciones adicionales -->
     
     <h3 style="margin: 20px 0 10px; color: #1f2937; font-size: 16px;">Mapeo de Parámetros</h3>
     <p style="color: #6b7280; font-size: 13px; margin-bottom: 15px;">
