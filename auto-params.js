@@ -23,7 +23,8 @@ const logEntries = []
 const statusIcon = document.getElementById("statusIcon")
 const statusTitle = document.getElementById("statusTitle")
 const statusSubtitle = document.getElementById("statusSubtitle")
-const infoBox = document.getElementById("infoBox")
+const messageBox = document.getElementById("messageBox")
+const messageText = document.getElementById("messageText")
 const configureBtn = document.getElementById("configureBtn")
 const logContainer = document.getElementById("logContainer")
 
@@ -35,45 +36,66 @@ if (typeof tableau === "undefined") {
   throw new Error("Tableau API no disponible")
 }
 
+const isEditorMode = () => {
+  try {
+    return tableau.extensions.environment.mode === "authoring"
+  } catch (e) {
+    return false
+  }
+}
+
+const log = (message, type = "info") => {
+  if (isEditorMode()) {
+    console.log(`[v0] ${message}`)
+  }
+  addLog(message, type)
+}
+
 // Inicializar extensión
-console.log("[v1] Iniciando inicialización de extensión...")
+log("Iniciando inicialización de extensión...")
 
 tableau.extensions.initializeAsync().then(
   () => {
     startTime = Date.now()
-    console.log("[v1] Extensión inicializada correctamente")
-    addLog("Extensión inicializada correctamente", "success")
+    log("Extensión inicializada correctamente", "success")
 
-    // Siempre habilitar el botón de configuración desde el inicio
-    configureBtn.style.display = "block"
-    configureBtn.onclick = configure
+    const editorMode = isEditorMode()
+
+    logContainer.style.display = editorMode ? "block" : "none"
+
+    if (editorMode) {
+      configureBtn.style.display = "inline-flex"
+      configureBtn.onclick = configure
+    } else {
+      configureBtn.style.display = "none"
+    }
+    // </CHANGE>
 
     try {
-      // Cargar configuración guardada
       const hasConfig = loadConfiguration()
 
-      console.log("[v1] ¿Tiene configuración?", hasConfig)
+      log("¿Tiene configuración? " + hasConfig)
 
       // Si no hay configuración, mostrar mensaje
       if (!hasConfig) {
-        console.log("[v1] No hay configuración, esperando configuración del usuario")
+        log("No hay configuración, esperando configuración del usuario")
         showConfigureButton()
         return
       }
 
       // Si hay configuración, ejecutar carga automática
-      console.log("[v1] Configuración encontrada, iniciando carga automática")
+      log("Configuración encontrada, iniciando carga automática")
       autoLoadParameters().catch((error) => {
-        console.error("[v1] Error no capturado:", error)
+        log("Error no capturado: " + error, "error")
         showError("Error inesperado: " + error.message)
       })
     } catch (error) {
-      console.error("[v1] Error en proceso de inicialización:", error)
+      log("Error en proceso de inicialización: " + error, "error")
       showError("Error al procesar configuración: " + error.message)
     }
   },
   (error) => {
-    console.error("[v1] Error al inicializar:", error)
+    log("Error al inicializar: " + error, "error")
     showError("Error al inicializar extensión: " + error.toString())
   },
 )
@@ -83,75 +105,70 @@ tableau.extensions.initializeAsync().then(
 // ============================
 async function autoLoadParameters() {
   try {
-    console.log("[v0] Iniciando autoLoadParameters")
-    updateStatus("loading", "Paso 1/5: Iniciando...", "Cargando extensión")
+    log("Iniciando autoLoadParameters")
+    updateStatus("loading", "Cargando...", "Iniciando proceso de configuración")
 
-    // Verificar que existe configuración
-    console.log("[v0] Verificando configuración...")
-    updateStatus("loading", "Paso 2/5: Verificando configuración...", "Cargando settings guardados")
-    console.log("[v0] CONFIG:", CONFIG)
+    log("Verificando configuración...")
+    updateStatus("loading", "Cargando...", "Verificando configuración guardada")
+    log("CONFIG: " + JSON.stringify(CONFIG))
 
     if (!CONFIG.dataSourceName || CONFIG.parameterMappings.length === 0) {
-      console.log("[v0] No hay configuración, mostrando botón")
-      addLog("No hay configuración. Debes configurar la fuente de datos y mapeos de parámetros.", "warning")
+      log("No hay configuración, mostrando botón")
       showConfigureButton()
       return
     }
 
-    // Obtener la fuente de datos configurada
-    console.log("[v0] Buscando fuente de datos:", CONFIG.dataSourceName)
-    updateStatus("loading", "Paso 3/5: Buscando fuente de datos...", `Conectando a: ${CONFIG.dataSourceName}`)
+    log("Buscando fuente de datos: " + CONFIG.dataSourceName)
+    updateStatus("loading", "Cargando...", "Conectando a fuente de datos")
     const dataSource = await getDataSource(CONFIG.dataSourceName)
 
     if (!dataSource) {
-      addLog(`Fuente de datos no encontrada: ${CONFIG.dataSourceName}`, "error")
+      log(`Fuente de datos no encontrada: ${CONFIG.dataSourceName}`, "error")
       showError(`No se encontró la fuente de datos: ${CONFIG.dataSourceName}`)
       return
     }
 
-    addLog(`Fuente de datos encontrada: ${dataSource.name}`, "success")
+    log(`Fuente de datos encontrada: ${dataSource.name}`, "success")
 
-    console.log("[v0] Obteniendo datos ya filtrados por Tableau...")
-    updateStatus("loading", "Paso 4/5: Leyendo tus datos...", "El worksheet ya está filtrado por USERNAME()")
+    log("Obteniendo datos ya filtrados por Tableau...")
+    updateStatus("loading", "Cargando...", "Leyendo tus datos personalizados")
 
     const userData = await getFilteredUserData(dataSource)
 
     if (!userData) {
-      showError("No se encontraron datos para tu usuario. Verifica que el filtro USERNAME() esté aplicado en 'Hoja 1'")
+      const errorMsg = CONFIG.errorMessage || "No se encontraron datos para tu usuario"
+      showError(errorMsg)
       return
     }
 
-    addLog(`Datos obtenidos correctamente`, "success")
+    log(`Datos obtenidos correctamente`, "success")
 
-    // Alimentar los parámetros
-    console.log("[v0] Alimentando parámetros...")
-    updateStatus("loading", "Paso 5/5: Alimentando parámetros...", "Configurando tus valores personalizados")
+    log("Alimentando parámetros...")
+    updateStatus("loading", "Cargando...", "Configurando parámetros")
 
     const feedResults = await feedParameters(userData)
 
     const firstMapping = CONFIG.parameterMappings[0]
     const firstParamValue = userData[firstMapping.columnName]
 
-    console.log("[v0] Valor del parámetro principal:", firstParamValue)
+    log("Valor del parámetro principal: " + firstParamValue)
 
     if (!firstParamValue || firstParamValue.toString().toUpperCase() === "NO_ROLE") {
-      // Usuario sin rol válido, mostrar mensaje de error personalizado
-      const errorMsg = CONFIG.errorMessage || "No tienes un rol asignado. Contacta con soporte para obtener acceso."
-      console.log("[v0] Usuario con NO_ROLE, mostrando error")
+      const errorMsg = CONFIG.errorMessage || "No tienes un rol asignado. Contacta con soporte."
+      log("Usuario con NO_ROLE, mostrando error")
       showError(errorMsg)
       return
     }
 
-    // Mostrar éxito
     const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2)
 
     const paramsList = CONFIG.parameterMappings
       .map((m) => `${m.parameterName}: ${userData[m.columnName] || "N/A"}`)
       .join(", ")
 
-    showSuccess(`Parámetros cargados en ${elapsedTime}s`, `Tus configuraciones: ${paramsList}`, firstParamValue)
+    showSuccess(`Parámetros configurados exitosamente en ${elapsedTime}s`, paramsList, firstParamValue)
   } catch (error) {
-    console.error("[v0] Error en autoLoadParameters:", error)
+    log("Error en autoLoadParameters: " + error, "error")
     const errorMsg = CONFIG.errorMessage || `Error al cargar parámetros: ${error.message}`
     showError(errorMsg)
   }
@@ -163,28 +180,25 @@ async function autoLoadParameters() {
 async function getDataSource(dataSourceName) {
   try {
     const dashboard = tableau.extensions.dashboardContent.dashboard
-    console.log("[v1] Dashboard obtenido, worksheets:", dashboard.worksheets.length)
+    log("Dashboard obtenido, worksheets: " + dashboard.worksheets.length)
 
     // Buscar en todos los worksheets
     for (const worksheet of dashboard.worksheets) {
-      console.log("[v1] Buscando en worksheet:", worksheet.name)
+      log("Buscando en worksheet: " + worksheet.name)
       const dataSources = await worksheet.getDataSourcesAsync()
-      console.log(
-        "[v1] Fuentes de datos encontradas:",
-        dataSources.map((ds) => ds.name),
-      )
+      log("Fuentes de datos encontradas: " + dataSources.map((ds) => ds.name).join(", "))
 
       const found = dataSources.find((ds) => ds.name === dataSourceName)
       if (found) {
-        console.log("[v1] Fuente de datos encontrada!")
+        log("Fuente de datos encontrada!")
         return found
       }
     }
 
-    console.log("[v1] Fuente de datos no encontrada")
+    log("Fuente de datos no encontrada")
     return null
   } catch (error) {
-    console.error("[v1] Error en getDataSource:", error)
+    log("Error en getDataSource: " + error, "error")
     throw error
   }
 }
@@ -194,12 +208,10 @@ async function getDataSource(dataSourceName) {
 // ============================
 async function getFilteredUserData(dataSource) {
   try {
-    console.log("[v0] Obteniendo datos de la fuente...")
-    addLog("Obteniendo datos de la fuente...", "info")
+    log("Obteniendo datos de la fuente...")
 
     if (TESTING_MODE) {
-      console.log("[v0] MODO TESTING ACTIVADO - Buscando email:", TEST_EMAIL)
-      addLog(`MODO TESTING: Buscando usuario ${TEST_EMAIL}`, "warning")
+      log("MODO TESTING ACTIVADO - Buscando email: " + TEST_EMAIL, "warning")
     }
 
     const dashboard = tableau.extensions.dashboardContent.dashboard
@@ -210,8 +222,7 @@ async function getFilteredUserData(dataSource) {
       const dataSources = await ws.getDataSourcesAsync()
       if (dataSources.some((ds) => ds.name === dataSource.name)) {
         worksheet = ws
-        console.log("[v0] Worksheet encontrado:", ws.name)
-        addLog(`Usando worksheet: ${ws.name}`, "info")
+        log("Worksheet encontrado: " + ws.name)
         break
       }
     }
@@ -220,25 +231,17 @@ async function getFilteredUserData(dataSource) {
       throw new Error("No se encontró un worksheet que use la fuente de datos configurada")
     }
 
-    console.log("[v0] Leyendo datos del worksheet...")
+    log("Leyendo datos del worksheet...")
 
     const maxRows = TESTING_MODE ? 100 : 10
-    addLog(
-      TESTING_MODE
-        ? "Leyendo datos (modo testing: buscando tu email)..."
-        : "Leyendo tus datos (ya filtrados por Tableau)...",
-      "info",
-    )
 
     let dataTable = null
     const maxRetries = 3
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`[v0] Intento ${attempt}/${maxRetries} de cargar datos...`)
-        addLog(`Intento ${attempt}/${maxRetries} de cargar datos...`, "info")
+        log(`Intento ${attempt}/${maxRetries} de cargar datos...`)
 
-        // Crear promise con timeout de 10 segundos
         const dataPromise = worksheet.getSummaryDataAsync({
           maxRows: maxRows,
           ignoreSelection: true,
@@ -251,91 +254,64 @@ async function getFilteredUserData(dataSource) {
         dataTable = await Promise.race([dataPromise, timeoutPromise])
 
         if (dataTable && dataTable.data.length > 0) {
-          console.log("[v0] Datos cargados exitosamente")
+          log("Datos cargados exitosamente")
           break
         } else if (attempt < maxRetries) {
-          console.log("[v0] No se obtuvieron datos, esperando 2 segundos antes de reintentar...")
-          addLog("No se obtuvieron datos, reintentando...", "warning")
+          log("No se obtuvieron datos, esperando 2 segundos...", "warning")
           await new Promise((resolve) => setTimeout(resolve, 2000))
         }
       } catch (error) {
-        console.error(`[v0] Error en intento ${attempt}:`, error)
+        log(`Error en intento ${attempt}: ${error}`, "error")
         if (attempt === maxRetries) {
-          throw new Error(`No se pudieron cargar los datos después de ${maxRetries} intentos: ${error.message}`)
+          throw new Error(`No se pudieron cargar los datos después de ${maxRetries} intentos`)
         }
-        addLog(`Error en intento ${attempt}, reintentando en 2 segundos...`, "warning")
         await new Promise((resolve) => setTimeout(resolve, 2000))
       }
     }
 
     if (!dataTable || dataTable.data.length === 0) {
-      const errorMsg =
-        CONFIG.errorMessage ||
-        "No se encontraron datos para tu usuario. Verifica que el filtro USERNAME() esté aplicado en 'Hoja 1'"
-      throw new Error(errorMsg)
+      throw new Error("No se encontraron datos")
     }
 
-    console.log("[v0] Filas obtenidas:", dataTable.data.length)
-    addLog(`Registros cargados: ${dataTable.data.length}`, "success")
+    log("Filas obtenidas: " + dataTable.data.length, "success")
 
-    // En modo testing, buscar el email específico
-    let targetRow = dataTable.data[0] // Por defecto, primera fila
+    let targetRow = dataTable.data[0]
 
     if (TESTING_MODE) {
-      console.log("[v0] Buscando email en los datos...")
       const emailColumnIndex = dataTable.columns.findIndex((col) => col.fieldName === CONFIG.usernameColumn)
 
       if (emailColumnIndex === -1) {
-        addLog(`No se encontró la columna ${CONFIG.usernameColumn}`, "error")
+        log(`No se encontró la columna ${CONFIG.usernameColumn}`, "error")
         throw new Error(`Columna ${CONFIG.usernameColumn} no existe`)
       }
 
-      console.log("[v0] Columna EMAIL en índice:", emailColumnIndex)
-
-      // Buscar la fila con el email de testing
       const foundRow = dataTable.data.find((row) => {
         const emailValue = row[emailColumnIndex].value
-        console.log("[v0] Comparando:", emailValue, "con", TEST_EMAIL)
         return emailValue && emailValue.toUpperCase() === TEST_EMAIL.toUpperCase()
       })
 
       if (foundRow) {
         targetRow = foundRow
-        console.log("[v0] Email encontrado en los datos!")
-        addLog(`Usuario encontrado: ${TEST_EMAIL}`, "success")
+        log(`Usuario encontrado: ${TEST_EMAIL}`, "success")
       } else {
-        console.error("[v0] Email NO encontrado en los datos")
-        addLog(`Email ${TEST_EMAIL} no encontrado en los primeros ${maxRows} registros`, "error")
-
-        // Mostrar algunos emails de ejemplo
-        const ejemplos = dataTable.data
-          .slice(0, 5)
-          .map((row) => row[emailColumnIndex].value)
-          .join(", ")
-        console.log("[v0] Ejemplos de emails en los datos:", ejemplos)
-        addLog(`Ejemplos: ${ejemplos}`, "info")
-
+        log(`Email ${TEST_EMAIL} no encontrado`, "error")
         return null
       }
     }
 
     const userData = {}
 
-    // Convertir a objeto con nombres de columna
     dataTable.columns.forEach((column, index) => {
       const fieldName = column.fieldName
       const value = targetRow[index].value
       userData[fieldName] = value
-      console.log("[v0] Columna:", fieldName, "=", value)
     })
 
-    console.log("[v0] Datos del usuario:", userData)
-    addLog(`Datos cargados correctamente`, "success")
+    log("Datos cargados correctamente", "success")
 
     return userData
   } catch (error) {
-    console.error("[v0] Error al obtener datos filtrados:", error)
-    addLog(`Error al obtener datos: ${error.message}`, "error")
+    log("Error al obtener datos filtrados: " + error, "error")
     throw error
   }
 }
@@ -352,13 +328,12 @@ async function feedParameters(userData) {
       const paramName = mapping.parameterName
       const columnName = mapping.columnName
 
-      console.log("[v0] Alimentando parámetro:", paramName, "con columna:", columnName)
+      log("Alimentando parámetro: " + paramName + " con columna: " + columnName)
 
       const value = userData[columnName]
 
       if (value === undefined || value === null) {
-        console.warn("[v0] No se encontró valor para la columna:", columnName)
-        addLog(`Columna '${columnName}' no encontrada en los datos`, "warning")
+        log(`No se encontró valor para la columna: ${columnName}`, "warning")
         continue
       }
 
@@ -366,18 +341,16 @@ async function feedParameters(userData) {
         const parameter = await dashboard.findParameterAsync(paramName)
         await parameter.changeValueAsync(value.toString())
 
-        console.log("[v0] Parámetro actualizado:", paramName, "=", value)
-        addLog(`${paramName} = ${value}`, "success")
+        log(`Parámetro actualizado: ${paramName} = ${value}`, "success")
         feedResults.push({ parameter: paramName, value, success: true })
       } catch (error) {
-        console.error("[v0] Error al actualizar parámetro:", paramName, error)
-        addLog(`Error al actualizar ${paramName}: ${error.message}`, "error")
+        log(`Error al actualizar parámetro ${paramName}: ${error}`, "error")
         feedResults.push({ parameter: paramName, value, success: false, error: error.message })
       }
     }
 
     const successCount = feedResults.filter((r) => r.success).length
-    console.log("[v0] Parámetros actualizados:", successCount, "de", feedResults.length)
+    log("Parámetros actualizados: " + successCount + " de " + feedResults.length)
 
     if (successCount === 0) {
       throw new Error("No se pudo actualizar ningún parámetro")
@@ -385,7 +358,7 @@ async function feedParameters(userData) {
 
     return feedResults
   } catch (error) {
-    console.error("[v0] Error al alimentar parámetros:", error)
+    log("Error al alimentar parámetros: " + error, "error")
     throw error
   }
 }
@@ -394,11 +367,9 @@ async function feedParameters(userData) {
 // Configuración de la extensión
 // =========================
 function configure() {
-  console.log("[v1] Abriendo diálogo de configuración...")
+  log("Abriendo diálogo de configuración...")
   const popupUrl = window.location.href.replace("index.html", "config.html")
-  console.log("[v1] URL de configuración:", popupUrl)
-
-  addLog("Abriendo ventana de configuración...", "info")
+  log("URL de configuración: " + popupUrl)
 
   tableau.extensions.ui
     .displayDialogAsync(popupUrl, "", {
@@ -406,19 +377,16 @@ function configure() {
       width: 700,
     })
     .then((closePayload) => {
-      console.log("[v1] Configuración guardada, recargando...")
-      addLog("Configuración guardada exitosamente", "success")
+      log("Configuración guardada, recargando...", "success")
       setTimeout(() => {
         window.location.reload()
       }, 500)
     })
     .catch((error) => {
       if (error.toString().includes("canceled")) {
-        console.log("[v1] Usuario canceló la configuración")
-        addLog("Configuración cancelada por el usuario", "warning")
+        log("Usuario canceló la configuración", "warning")
       } else {
-        console.error("[v1] Error en configuración:", error)
-        addLog("Error al abrir configuración: " + error.message, "error")
+        log("Error en configuración: " + error, "error")
       }
     })
 }
@@ -428,9 +396,9 @@ function configure() {
 // =========================
 function loadConfiguration() {
   try {
-    console.log("[v1] Cargando configuración...")
+    log("Cargando configuración...")
     const settings = tableau.extensions.settings.getAll()
-    console.log("[v1] Settings:", settings)
+    log("Settings: " + JSON.stringify(settings))
 
     if (settings.dataSourceName) {
       CONFIG.dataSourceName = settings.dataSourceName
@@ -439,16 +407,14 @@ function loadConfiguration() {
       CONFIG.hideAfterLoad = settings.hideAfterLoad === "true"
       CONFIG.errorMessage = settings.errorMessage || ""
 
-      console.log("[v1] Configuración cargada:", CONFIG)
-      addLog("Configuración cargada desde settings", "success")
+      log("Configuración cargada: " + JSON.stringify(CONFIG))
       return true
     } else {
-      console.log("[v1] No hay configuración guardada")
+      log("No hay configuración guardada")
       return false
     }
   } catch (error) {
-    console.error("[v1] Error cargando configuración:", error)
-    addLog("Error cargando configuración: " + error.message, "error")
+    log("Error cargando configuración: " + error, "error")
     return false
   }
 }
@@ -457,9 +423,15 @@ function loadConfiguration() {
 // Mostrar botón de configuración
 // =========================
 function showConfigureButton() {
-  updateStatus("warning", "Configuración Requerida", "Debes configurar la fuente de datos y mapeo de parámetros")
-  configureBtn.style.display = "block"
-  configureBtn.onclick = configure
+  updateStatus("warning", "Configuración Requerida", "Debes configurar la extensión")
+
+  if (isEditorMode()) {
+    configureBtn.style.display = "inline-flex"
+    configureBtn.onclick = configure
+  } else {
+    configureBtn.style.display = "none"
+    showMessage("Esta extensión requiere configuración. Contacta al administrador.", "error")
+  }
 }
 
 // =========================
@@ -467,10 +439,10 @@ function showConfigureButton() {
 // =========================
 function updateStatus(type, title, subtitle) {
   const icons = {
-    loading: "⏳",
+    loading: "ℹ",
     success: "✓",
     error: "✗",
-    warning: "⚠️",
+    warning: "⚠",
   }
 
   statusIcon.className = `status-icon ${type}`
@@ -479,17 +451,28 @@ function updateStatus(type, title, subtitle) {
   statusSubtitle.textContent = subtitle
 }
 
+function showMessage(message, type = "info") {
+  messageBox.className = `message-box ${type}`
+  messageText.textContent = message
+  messageBox.style.display = "block"
+}
+
+function hideMessage() {
+  messageBox.style.display = "none"
+}
+
 // =========================
 // Mostrar error general
 // =========================
 function showError(message) {
-  console.error("[v1]", message)
-
   updateStatus("error", "Error", message)
-  addLog(`✗ ${message}`, "error")
+  showMessage(message, "error")
+  log("Error: " + message, "error")
 
-  configureBtn.style.display = "block"
-  configureBtn.onclick = configure
+  if (isEditorMode()) {
+    configureBtn.style.display = "inline-flex"
+    configureBtn.onclick = configure
+  }
 }
 
 // =========================
@@ -503,37 +486,26 @@ function addLog(message, type = "info") {
 
   logContainer.appendChild(logEntry)
   logContainer.scrollTop = logContainer.scrollHeight
-
-  console.log("[v1]", message)
 }
 
 // =========================
 // Mostrar éxito personalizado
 // =========================
 function showSuccess(title, subtitle, roleValue) {
-  updateStatus("success", title, subtitle)
-  const paramsCountEl = document.getElementById("paramsCount")
-  if (paramsCountEl) paramsCountEl.textContent = CONFIG.parameterMappings.length
-  const loadTimeEl = document.getElementById("loadTime")
-  if (loadTimeEl) loadTimeEl.textContent = `${((Date.now() - startTime) / 1000).toFixed(2)}s`
-  if (infoBox) infoBox.style.display = "block"
+  updateStatus("success", "Completado", title)
+  showMessage(subtitle, "success")
+  log("Éxito: " + title, "success")
 
   if (CONFIG.hideAfterLoad && roleValue && roleValue.toString().toUpperCase() !== "NO_ROLE") {
-    addLog("Ocultando extensión en 2 segundos...", "info")
+    log("Ocultando extensión en 2 segundos...")
     setTimeout(() => {
-      const extensionObject = document.querySelector(".tab-dashboard-extension-object")
-      if (extensionObject) {
-        extensionObject.style.display = "none"
-        console.log("[v0] Extensión ocultada exitosamente")
-      } else {
-        console.log("[v0] No se encontró el objeto de extensión para ocultar")
-      }
+      log("Ocultando extensión...")
+      document.body.classList.add("hidden")
+      document.body.style.display = "none"
+      document.body.style.height = "0px"
+      document.body.style.overflow = "hidden"
+
+      log("Extensión ocultada")
     }, 2000)
-  } else {
-    if (!CONFIG.hideAfterLoad) {
-      console.log("[v0] No se oculta extensión: opción desactivada")
-    } else {
-      console.log("[v0] No se oculta extensión: usuario tiene NO_ROLE")
-    }
   }
 }
