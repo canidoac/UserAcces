@@ -4,7 +4,7 @@ const tableau = window.tableau
 // Configuración de la extensión
 const CONFIG = {
   dataSourceName: null, // Nombre de la fuente de datos (se configura después)
-  usernameColumn: "username", // Columna que contiene el username
+  usernameColumn: "EMAIL", // Columna que contiene el username
   parameterMappings: [], // Mapeo de columnas a parámetros
 }
 
