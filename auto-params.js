@@ -195,7 +195,7 @@ async function getDataSource(dataSourceName) {
 // =========================
 async function getFilteredUserData(dataSource, username) {
   try {
-    console.log("[v1] Buscando worksheet que use la fuente de datos:", dataSource.name)
+    console.log("[v0] Buscando worksheet que use la fuente de datos:", dataSource.name)
     addLog("Obteniendo datos de la fuente...", "info")
     updateStatus("loading", "Paso 5a/6: Buscando worksheet...", `Localizando worksheet con datos`)
 
@@ -207,7 +207,7 @@ async function getFilteredUserData(dataSource, username) {
       const dataSources = await worksheet.getDataSourcesAsync()
       if (dataSources.some((ds) => ds.name === dataSource.name)) {
         worksheetWithData = worksheet
-        console.log("[v1] Worksheet encontrado:", worksheet.name)
+        console.log("[v0] Worksheet encontrado:", worksheet.name)
         addLog(`Worksheet encontrado: ${worksheet.name}`, "success")
         break
       }
@@ -217,91 +217,84 @@ async function getFilteredUserData(dataSource, username) {
       throw new Error("No se encontró un worksheet que use esta fuente de datos")
     }
 
-    console.log("[v1] Iniciando carga incremental de datos...")
+    console.log("[v0] Iniciando carga de datos con getUnderlyingDataAsync...")
     const usernameUpper = String(username).trim().toUpperCase()
     addLog(`Buscando usuario: "${usernameUpper}" en columna "${CONFIG.usernameColumn}"`, "info")
 
-    // Cargar en lotes: 100 -> 1000 -> 10000 -> 50000
-    const batchSizes = [100, 1000, 10000, 50000]
+    // Timeout de 30 segundos para detectar si se queda colgado
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Timeout: La carga de datos tardó más de 30 segundos")), 30000)
+    })
 
-    for (const batchSize of batchSizes) {
-      console.log(`[v1] Intentando cargar ${batchSize} filas...`)
-      updateStatus(
-        "loading",
-        `Paso 5b/6: Cargando datos (${batchSize} registros)...`,
-        `Buscando tu usuario en la base de datos`,
-      )
-      addLog(`Cargando ${batchSize} registros...`, "info")
+    // Cargar datos subyacentes (más rápido que summary data)
+    const dataPromise = worksheetWithData.getUnderlyingDataAsync({
+      maxRows: 10000,
+      ignoreAliases: false,
+      ignoreSelection: true,
+      includeAllColumns: false,
+    })
 
-      const dataTable = await worksheetWithData.getSummaryDataAsync({
-        maxRows: batchSize,
-        ignoreAliases: false,
-        ignoreSelection: true,
-      })
+    updateStatus(
+      "loading",
+      `Paso 5b/6: Cargando datos subyacentes...`,
+      `Obteniendo registros de la fuente de datos (máximo 10,000)`,
+    )
 
-      console.log(`[v1] Filas cargadas: ${dataTable.data.length}`)
-      addLog(`Filas cargadas: ${dataTable.data.length}`, "info")
+    const dataTable = await Promise.race([dataPromise, timeoutPromise])
 
-      // Buscar el índice de la columna de username
-      const usernameColumnIndex = dataTable.columns.findIndex(
-        (col) => col.fieldName.toLowerCase() === CONFIG.usernameColumn.toLowerCase(),
-      )
+    console.log(`[v0] Filas cargadas: ${dataTable.data.length}`)
+    addLog(`Filas cargadas: ${dataTable.data.length}`, "success")
 
-      if (usernameColumnIndex === -1) {
-        addLog(`Columnas disponibles: ${dataTable.columns.map((c) => c.fieldName).join(", ")}`, "warning")
-        throw new Error(`No se encontró la columna: ${CONFIG.usernameColumn}`)
-      }
+    // Buscar el índice de la columna de username
+    const usernameColumnIndex = dataTable.columns.findIndex(
+      (col) => col.fieldName.toLowerCase() === CONFIG.usernameColumn.toLowerCase(),
+    )
 
-      console.log(`[v1] Índice de columna username: ${usernameColumnIndex}`)
-      addLog(`Buscando en columna "${CONFIG.usernameColumn}" (índice ${usernameColumnIndex})`, "info")
-
-      const sampleValues = dataTable.data
-        .slice(0, 5)
-        .map((row) => String(row[usernameColumnIndex].value).trim().toUpperCase())
-      console.log(`[v1] Primeros 5 valores en la columna:`, sampleValues)
-      addLog(`Ejemplos de valores: ${sampleValues.join(", ")}`, "info")
-
-      // Buscar el usuario en este lote
-      const userData = dataTable.data.filter((row) => {
-        const cellValue = row[usernameColumnIndex].value
-        const cellValueUpper = String(cellValue).trim().toUpperCase()
-        const matches = cellValueUpper === usernameUpper
-        if (matches) {
-          console.log(`[v1] MATCH ENCONTRADO: "${cellValueUpper}" === "${usernameUpper}"`)
-        }
-        return matches
-      })
-
-      if (userData.length > 0) {
-        console.log(`[v1] ✓ Usuario encontrado en ${batchSize} filas`)
-        addLog(`✓ Usuario encontrado en ${batchSize} registros`, "success")
-
-        // Cachear la tabla de datos para feedParameters
-        window._cachedDataTable = dataTable
-
-        return userData
-      }
-
-      // Si ya cargamos todas las filas disponibles, no intentar más lotes
-      if (dataTable.data.length < batchSize) {
-        console.log(`[v1] Solo hay ${dataTable.data.length} filas disponibles, no hay más datos`)
-        addLog(`Tabla completa cargada (${dataTable.data.length} registros)`, "info")
-        break
-      }
-
-      console.log(`[v1] Usuario no encontrado en ${batchSize} filas, intentando con más...`)
-      addLog(`Usuario no encontrado en ${batchSize} filas, intentando con más...`, "warning")
+    if (usernameColumnIndex === -1) {
+      const availableCols = dataTable.columns.map((c) => c.fieldName).join(", ")
+      addLog(`Columnas disponibles: ${availableCols}`, "warning")
+      throw new Error(`No se encontró la columna: ${CONFIG.usernameColumn}. Columnas disponibles: ${availableCols}`)
     }
 
-    console.log("[v1] ❌ Usuario no encontrado después de buscar en todos los lotes")
+    console.log(`[v0] Índice de columna username: ${usernameColumnIndex}`)
+    addLog(`Buscando en columna "${CONFIG.usernameColumn}" (índice ${usernameColumnIndex})`, "info")
+
+    const sampleValues = dataTable.data.slice(0, 10).map((row) => String(row[usernameColumnIndex].value).trim())
+    console.log(`[v0] Primeros 10 valores en la columna:`, sampleValues)
+    addLog(`Ejemplos de valores (sin uppercase): ${sampleValues.join(", ")}`, "info")
+
+    // Buscar el usuario
+    const userData = dataTable.data.filter((row) => {
+      const cellValue = row[usernameColumnIndex].value
+      const cellValueUpper = String(cellValue).trim().toUpperCase()
+      const matches = cellValueUpper === usernameUpper
+      if (matches) {
+        console.log(`[v0] ✓ MATCH ENCONTRADO: "${cellValueUpper}" === "${usernameUpper}"`)
+        addLog(`✓ Match encontrado: "${cellValue}"`, "success")
+      }
+      return matches
+    })
+
+    if (userData.length > 0) {
+      console.log(`[v0] ✓ Usuario encontrado (${userData.length} registro(s))`)
+      addLog(`✓ Usuario encontrado (${userData.length} registro(s))`, "success")
+
+      // Cachear la tabla de datos para feedParameters
+      window._cachedDataTable = dataTable
+
+      return userData
+    }
+
+    console.log("[v0] ❌ Usuario no encontrado")
     addLog(`⚠ No se encontró el usuario "${username}" en la columna "${CONFIG.usernameColumn}"`, "warning")
     addLog(`💡 Username buscado (uppercase): "${usernameUpper}"`, "info")
+    addLog(`💡 Primeros valores en la columna: ${sampleValues.slice(0, 5).join(", ")}`, "info")
     addLog(`💡 Verifica que tu username de Tableau coincida exactamente con un valor en la columna`, "info")
 
     return []
   } catch (error) {
-    console.error("[v1] Error al obtener datos:", error)
-    addLog("Error al obtener datos: " + error.message, "error")
+    console.error("[v0] Error al obtener datos:", error)
+    addLog("✗ Error al obtener datos: " + error.message, "error")
     throw error
   }
 }
@@ -349,9 +342,7 @@ async function feedParameters(userDataRow, dataSource) {
         }
 
         // 2. Encontrar el índice de la columna
-        const columnIndex = columnNames.findIndex(
-          (name) => name.toLowerCase() === mapping.columnName.toLowerCase(),
-        )
+        const columnIndex = columnNames.findIndex((name) => name.toLowerCase() === mapping.columnName.toLowerCase())
         console.log("[v1] Índice de columna:", columnIndex)
 
         if (columnIndex === -1) {
@@ -364,10 +355,7 @@ async function feedParameters(userDataRow, dataSource) {
         // 3. Obtener el valor de la columna de este usuario
         const rawValue = userDataRow[columnIndex].value
         console.log("[v1] Valor bruto obtenido:", rawValue)
-        addLog(
-          `Valor encontrado para columna "${mapping.columnName}" (fila usuario): "${rawValue}"`,
-          "info",
-        )
+        addLog(`Valor encontrado para columna "${mapping.columnName}" (fila usuario): "${rawValue}"`, "info")
 
         // 4. Info del parámetro
         console.log("[v1] Parámetro:", {
@@ -413,10 +401,7 @@ async function feedParameters(userDataRow, dataSource) {
         }
 
         // 6. Validar contra allowableValues si es lista
-        if (
-          parameter.allowableValues &&
-          parameter.allowableValues.type === tableau.ParameterValueType.List
-        ) {
+        if (parameter.allowableValues && parameter.allowableValues.type === tableau.ParameterValueType.List) {
           const allowed = parameter.allowableValues.allowableValues.map((v) => v.formattedValue)
           if (!allowed.includes(String(finalValue))) {
             addLog(
@@ -431,12 +416,7 @@ async function feedParameters(userDataRow, dataSource) {
         try {
           await parameter.changeValueAsync(finalValue)
           addLog(`✓ Parámetro "${mapping.parameterName}" actualizado a "${finalValue}"`, "success")
-          console.log(
-            "[v1] Parámetro actualizado:",
-            parameter.name,
-            "nuevo valor:",
-            finalValue,
-          )
+          console.log("[v1] Parámetro actualizado:", parameter.name, "nuevo valor:", finalValue)
 
           loadedParams.push({
             name: mapping.parameterName,
