@@ -127,7 +127,20 @@ async function autoLoadParameters() {
     console.log("[v0] Alimentando parámetros...")
     updateStatus("loading", "Paso 5/5: Alimentando parámetros...", "Configurando tus valores personalizados")
 
-    await feedParameters(userData)
+    const feedResults = await feedParameters(userData)
+
+    const firstMapping = CONFIG.parameterMappings[0]
+    const firstParamValue = userData[firstMapping.columnName]
+
+    console.log("[v0] Valor del parámetro principal:", firstParamValue)
+
+    if (!firstParamValue || firstParamValue.toString().toUpperCase() === "NO_ROLE") {
+      // Usuario sin rol válido, mostrar mensaje de error personalizado
+      const errorMsg = CONFIG.errorMessage || "No tienes un rol asignado. Contacta con soporte para obtener acceso."
+      console.log("[v0] Usuario con NO_ROLE, mostrando error")
+      showError(errorMsg)
+      return
+    }
 
     // Mostrar éxito
     const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2)
@@ -136,10 +149,11 @@ async function autoLoadParameters() {
       .map((m) => `${m.parameterName}: ${userData[m.columnName] || "N/A"}`)
       .join(", ")
 
-    showSuccess(`Parámetros cargados en ${elapsedTime}s`, `Tus configuraciones: ${paramsList}`)
+    showSuccess(`Parámetros cargados en ${elapsedTime}s`, `Tus configuraciones: ${paramsList}`, firstParamValue)
   } catch (error) {
     console.error("[v0] Error en autoLoadParameters:", error)
-    showError("Error al cargar parámetros: " + error.message)
+    const errorMsg = CONFIG.errorMessage || `Error al cargar parámetros: ${error.message}`
+    showError(errorMsg)
   }
 }
 
@@ -471,12 +485,8 @@ function updateStatus(type, title, subtitle) {
 function showError(message) {
   console.error("[v1]", message)
 
-  // Si el error es sobre no encontrar usuario y hay mensaje personalizado, usarlo
-  const displayMessage =
-    message.includes("No se encontraron datos") && CONFIG.errorMessage ? CONFIG.errorMessage : message
-
-  updateStatus("error", "Error", displayMessage)
-  addLog(`✗ ${displayMessage}`, "error")
+  updateStatus("error", "Error", message)
+  addLog(`✗ ${message}`, "error")
 
   configureBtn.style.display = "block"
   configureBtn.onclick = configure
@@ -500,7 +510,7 @@ function addLog(message, type = "info") {
 // =========================
 // Mostrar éxito personalizado
 // =========================
-function showSuccess(title, subtitle) {
+function showSuccess(title, subtitle, roleValue) {
   updateStatus("success", title, subtitle)
   const paramsCountEl = document.getElementById("paramsCount")
   if (paramsCountEl) paramsCountEl.textContent = CONFIG.parameterMappings.length
@@ -508,14 +518,22 @@ function showSuccess(title, subtitle) {
   if (loadTimeEl) loadTimeEl.textContent = `${((Date.now() - startTime) / 1000).toFixed(2)}s`
   if (infoBox) infoBox.style.display = "block"
 
-  // Ocultar extensión después de cargar si está configurado
-  if (CONFIG.hideAfterLoad) {
-    addLog("Ocultando extensión (configurado por usuario)...", "info")
+  if (CONFIG.hideAfterLoad && roleValue && roleValue.toString().toUpperCase() !== "NO_ROLE") {
+    addLog("Ocultando extensión en 2 segundos...", "info")
     setTimeout(() => {
       const extensionObject = document.querySelector(".tab-dashboard-extension-object")
       if (extensionObject) {
         extensionObject.style.display = "none"
+        console.log("[v0] Extensión ocultada exitosamente")
+      } else {
+        console.log("[v0] No se encontró el objeto de extensión para ocultar")
       }
     }, 2000)
+  } else {
+    if (!CONFIG.hideAfterLoad) {
+      console.log("[v0] No se oculta extensión: opción desactivada")
+    } else {
+      console.log("[v0] No se oculta extensión: usuario tiene NO_ROLE")
+    }
   }
 }
