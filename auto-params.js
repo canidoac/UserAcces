@@ -125,7 +125,9 @@ async function autoLoadParameters() {
     // Mostrar éxito
     const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2)
 
-    const paramsList = CONFIG.parameterMappings.map((m) => `${m.parameter}: ${userData[m.column] || "N/A"}`).join(", ")
+    const paramsList = CONFIG.parameterMappings
+      .map((m) => `${m.parameterName}: ${userData[m.columnName] || "N/A"}`)
+      .join(", ")
 
     showSuccess(`Parámetros cargados en ${elapsedTime}s`, `Tus configuraciones: ${paramsList}`)
   } catch (error) {
@@ -241,8 +243,8 @@ async function feedParameters(userData) {
     const feedResults = []
 
     for (const mapping of CONFIG.parameterMappings) {
-      const paramName = mapping.parameter
-      const columnName = mapping.column
+      const paramName = mapping.parameterName
+      const columnName = mapping.columnName
 
       console.log("[v0] Alimentando parámetro:", paramName, "con columna:", columnName)
 
