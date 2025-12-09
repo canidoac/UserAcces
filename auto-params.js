@@ -106,10 +106,10 @@ tableau.extensions.initializeAsync().then(
 async function autoLoadParameters() {
   try {
     log("Iniciando autoLoadParameters")
-    updateStatus("loading", "Cargando...", "Iniciando proceso de configuración")
+    updateStatus("loading", "Cargando...", "loading", null, isEditorMode())
 
     log("Verificando configuración...")
-    updateStatus("loading", "Cargando...", "Verificando configuración guardada")
+    updateStatus("loading", "Cargando...", "loading", null, isEditorMode())
     log("CONFIG: " + JSON.stringify(CONFIG))
 
     if (!CONFIG.dataSourceName || CONFIG.parameterMappings.length === 0) {
@@ -119,7 +119,7 @@ async function autoLoadParameters() {
     }
 
     log("Buscando fuente de datos: " + CONFIG.dataSourceName)
-    updateStatus("loading", "Cargando...", "Conectando a fuente de datos")
+    updateStatus("loading", "Cargando...", "loading", null, isEditorMode())
     const dataSource = await getDataSource(CONFIG.dataSourceName)
 
     if (!dataSource) {
@@ -131,7 +131,7 @@ async function autoLoadParameters() {
     log(`Fuente de datos encontrada: ${dataSource.name}`, "success")
 
     log("Obteniendo datos ya filtrados por Tableau...")
-    updateStatus("loading", "Cargando...", "Leyendo tus datos personalizados")
+    updateStatus("loading", "Cargando...", "loading", null, isEditorMode())
 
     const userData = await getFilteredUserData(dataSource)
 
@@ -144,7 +144,7 @@ async function autoLoadParameters() {
     log(`Datos obtenidos correctamente`, "success")
 
     log("Alimentando parámetros...")
-    updateStatus("loading", "Cargando...", "Configurando parámetros")
+    updateStatus("loading", "Cargando...", "loading", null, isEditorMode())
 
     const feedResults = await feedParameters(userData)
 
@@ -317,7 +317,6 @@ async function getFilteredUserData(dataSource) {
 }
 
 // ===========================
-// Alimentar parámetros
 // ===========================
 async function feedParameters(userData) {
   try {
@@ -423,7 +422,7 @@ function loadConfiguration() {
 // Mostrar botón de configuración
 // =========================
 function showConfigureButton() {
-  updateStatus("warning", "Configuración Requerida", "Debes configurar la extensión")
+  updateStatus("warning", "Configuración Requerida", "warning", "Debes configurar la extensión", isEditorMode())
 
   if (isEditorMode()) {
     configureBtn.style.display = "inline-flex"
@@ -437,18 +436,45 @@ function showConfigureButton() {
 // =========================
 // Actualizar estado visual
 // =========================
-function updateStatus(type, title, subtitle) {
+function updateStatus(title, subtitle, status = "loading", message = null, isEditorMode = false) {
+  const statusIcon = document.getElementById("statusIcon")
+  const statusTitle = document.getElementById("statusTitle")
+  const statusSubtitle = document.getElementById("statusSubtitle")
+  const messageBox = document.getElementById("messageBox")
+  const messageText = document.getElementById("messageText")
+
+  statusTitle.textContent = title
+  statusSubtitle.textContent = subtitle
+
+  statusIcon.className = "status-icon " + status
+
   const icons = {
     loading: "ℹ",
     success: "✓",
     error: "✗",
     warning: "⚠",
   }
+  statusIcon.textContent = icons[status] || "ℹ"
 
-  statusIcon.className = `status-icon ${type}`
-  statusIcon.textContent = icons[type]
-  statusTitle.textContent = title
-  statusSubtitle.textContent = subtitle
+  if (message) {
+    messageBox.style.display = "block"
+    messageBox.className = "message-box " + status
+
+    // Convertir URLs a enlaces clickeables
+    const urlRegex = /(https?:\/\/[^\s]+)/g
+    const messageWithLinks = message.replace(urlRegex, '<a href="$1" target="_blank">$1</a>')
+    messageText.innerHTML = messageWithLinks
+  } else {
+    messageBox.style.display = "none"
+  }
+
+  // Mostrar botón de configurar solo en modo editor
+  const configureBtn = document.getElementById("configureBtn")
+  if (isEditorMode && status === "error") {
+    configureBtn.style.display = "inline-flex"
+  } else {
+    configureBtn.style.display = "none"
+  }
 }
 
 function showMessage(message, type = "info") {
@@ -465,14 +491,7 @@ function hideMessage() {
 // Mostrar error general
 // =========================
 function showError(message) {
-  updateStatus("error", "Error", message)
-  showMessage(message, "error")
-  log("Error: " + message, "error")
-
-  if (isEditorMode()) {
-    configureBtn.style.display = "inline-flex"
-    configureBtn.onclick = configure
-  }
+  updateStatus("Error", "Error", "error", message, isEditorMode())
 }
 
 // =========================
@@ -492,20 +511,32 @@ function addLog(message, type = "info") {
 // Mostrar éxito personalizado
 // =========================
 function showSuccess(title, subtitle, roleValue) {
-  updateStatus("success", "Completado", title)
-  showMessage(subtitle, "success")
-  log("Éxito: " + title, "success")
-
+  // Si está configurado para ocultar y el rol es válido, ocultar inmediatamente sin mostrar mensaje
   if (CONFIG.hideAfterLoad && roleValue && roleValue.toString().toUpperCase() !== "NO_ROLE") {
-    log("Ocultando extensión en 2 segundos...")
-    setTimeout(() => {
-      log("Ocultando extensión...")
-      document.body.classList.add("hidden")
-      document.body.style.display = "none"
-      document.body.style.height = "0px"
-      document.body.style.overflow = "hidden"
-
-      log("Extensión ocultada")
-    }, 2000)
+    log("Ocultando extensión inmediatamente sin mostrar mensaje de éxito")
+    hideExtension()
+    return
   }
+
+  // Si no se va a ocultar, mostrar el mensaje de éxito normalmente
+  updateStatus(`Hola ${roleValue}`, subtitle, "success", null, isEditorMode())
+  log("Éxito: " + title, "success")
+}
+
+function checkIfEditorMode() {
+  return isEditorMode()
+}
+
+function hideExtension() {
+  document.body.classList.add("hidden")
+  document.body.style.display = "none"
+  document.body.style.height = "0px"
+  document.body.style.overflow = "hidden"
+}
+
+function logMessage(message, type = "info", isEditorMode = false) {
+  if (isEditorMode()) {
+    console.log(`[v0] ${message}`)
+  }
+  addLog(message, type)
 }

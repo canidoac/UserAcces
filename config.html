@@ -152,6 +152,24 @@
     </div>
     <!-- Fin de opciones adicionales -->
     
+    <!-- Agregar opción de importar CSV -->
+    <div class="form-group" style="background: #f0fdf4; border: 1px dashed #10b981; border-radius: 6px; padding: 15px; margin-bottom: 15px;">
+      <label for="csvInput" style="color: #059669;">Importar Mapeos desde CSV (Opcional):</label>
+      <input 
+        type="text" 
+        id="csvInput" 
+        placeholder="Ej: EMAIL,Usuario,ROL,RolParametro,REGION,RegionParametro"
+        style="font-family: monospace; font-size: 13px;"
+      >
+      <p style="color: #059669; font-size: 12px; margin-top: 5px;">
+        Formato: Columna1,Parametro1,Columna2,Parametro2,... (pares de valores separados por comas)
+      </p>
+      <button class="btn-add" onclick="importFromCSV()" style="margin-top: 10px; font-size: 13px;">
+        📥 Importar desde CSV
+      </button>
+    </div>
+    <!-- Fin de opción de importar CSV -->
+    
     <h3 style="margin: 20px 0 10px; color: #1f2937; font-size: 16px;">Mapeo de Parámetros</h3>
     <p style="color: #6b7280; font-size: 13px; margin-bottom: 15px;">
       Define qué columna de la fuente de datos alimentará cada parámetro

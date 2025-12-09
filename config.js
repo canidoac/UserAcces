@@ -357,3 +357,53 @@ function saveConfiguration() {
 function closeDialog() {
   tableau.extensions.ui.closeDialog("cancelled")
 }
+
+function importFromCSV() {
+  const csvInput = document.getElementById("csvInput").value.trim()
+
+  if (!csvInput) {
+    alert("Por favor ingresa un texto CSV para importar")
+    return
+  }
+
+  // Parsear el CSV: Columna1,Parametro1,Columna2,Parametro2,...
+  const values = csvInput
+    .split(",")
+    .map((v) => v.trim())
+    .filter((v) => v)
+
+  if (values.length === 0 || values.length % 2 !== 0) {
+    alert("Formato CSV inválido. Debes ingresar pares de valores: Columna,Parametro,Columna,Parametro,...")
+    return
+  }
+
+  // Limpiar mapeos existentes
+  const container = document.getElementById("mappingsContainer")
+  container.innerHTML = ""
+  mappings = []
+
+  // Crear mapeos desde el CSV
+  for (let i = 0; i < values.length; i += 2) {
+    const columnName = values[i]
+    const parameterName = values[i + 1]
+
+    // Verificar que la columna exista
+    if (availableColumns.length > 0 && !availableColumns.includes(columnName)) {
+      console.warn(`[v0] Columna "${columnName}" no encontrada en la fuente de datos`)
+    }
+
+    // Verificar que el parámetro exista
+    const paramExists = availableParameters.find((p) => p.name === parameterName)
+    if (!paramExists) {
+      console.warn(`[v0] Parámetro "${parameterName}" no encontrado en el dashboard`)
+    }
+
+    addMapping({ columnName, parameterName })
+  }
+
+  console.log(`[v0] Importados ${mappings.length} mapeos desde CSV`)
+  alert(`Se importaron ${mappings.length} mapeos correctamente`)
+
+  // Limpiar el input
+  document.getElementById("csvInput").value = ""
+}
