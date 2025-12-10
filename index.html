@@ -161,7 +161,17 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
+      position: relative;
       z-index: 10000;
+    }
+    
+    .btn-configure.fixed-mode {
+      position: fixed !important;
+      top: 10px !important;
+      right: 10px !important;
+      margin: 0 !important;
+      z-index: 99999 !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
     }
     
     .btn-configure:hover {

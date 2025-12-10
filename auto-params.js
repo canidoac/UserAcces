@@ -546,14 +546,28 @@ function hideExtension() {
   const editorMode = isEditorMode()
 
   if (editorMode) {
-    log("En modo editor, manteniendo botón de configuración visible")
-    // Solo ocultar el contenido principal, no el botón
+    log("En modo editor, manteniendo botón de configuración visible y accesible")
+
+    // Ocultar todo el contenedor principal
     const mainContainer = document.querySelector(".container")
     if (mainContainer) {
       mainContainer.style.opacity = "0"
       setTimeout(() => {
         mainContainer.style.display = "none"
       }, 50)
+    }
+
+    // ASEGURAR que el botón de configuración permanezca visible y fijo
+    const configBtn = document.getElementById("configureBtn")
+    if (configBtn) {
+      configBtn.style.display = "inline-flex"
+      configBtn.style.position = "fixed"
+      configBtn.style.top = "10px"
+      configBtn.style.right = "10px"
+      configBtn.style.zIndex = "99999"
+      configBtn.style.opacity = "1"
+      configBtn.style.visibility = "visible"
+      configBtn.onclick = configure
     }
     return
   }

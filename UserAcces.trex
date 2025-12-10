@@ -15,7 +15,10 @@
     <permissions>
       <permission>full data</permission>
     </permissions>
-    <!-- Eliminado <context-menu> porque usamos botón de configuración -->
+    <!-- Agregado context-menu para mostrar opción de configuración en el menú desplegable -->
+    <context-menu>
+      <configure-context-menu-item />
+    </context-menu>
   </dashboard-extension>
   <resources>
     <resource id="name">
