@@ -365,17 +365,22 @@ function saveConfiguration() {
     return
   }
 
-  tableau.extensions.settings.set("worksheetName", worksheetName)
-  tableau.extensions.settings.set("dataSourceName", dataSourceName)
-  tableau.extensions.settings.set("usernameColumn", usernameColumn)
-  tableau.extensions.settings.set("parameterMappings", JSON.stringify(mappings))
-  tableau.extensions.settings.set("hideAfterLoad", hideAfterLoad.toString())
-  tableau.extensions.settings.set("errorMessage", errorMessage)
+  const parentTableau = window.parent.tableau
 
-  tableau.extensions.settings
+  parentTableau.extensions.settings.set("worksheetName", worksheetName)
+  parentTableau.extensions.settings.set("dataSourceName", dataSourceName)
+  parentTableau.extensions.settings.set("usernameColumn", usernameColumn)
+  parentTableau.extensions.settings.set("parameterMappings", JSON.stringify(mappings))
+  parentTableau.extensions.settings.set("hideAfterLoad", hideAfterLoad.toString())
+  parentTableau.extensions.settings.set("errorMessage", errorMessage)
+  parentTableau.extensions.settings.set("configured", "true")
+
+  console.log("[v0] Todas las configuraciones establecidas, guardando...")
+
+  parentTableau.extensions.settings
     .saveAsync()
     .then(() => {
-      console.log("[v0] Configuración guardada exitosamente")
+      console.log("[v0] Configuración guardada exitosamente en el workbook")
       tableau.extensions.ui.closeDialog("saved")
     })
     .catch((error) => {

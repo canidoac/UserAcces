@@ -69,17 +69,22 @@ tableau.extensions.initializeAsync().then(
       document.body.style.left = "0"
       document.body.style.padding = "20px"
     }
-    // </CHANGE>
 
     logContainer.style.display = editorMode ? "block" : "none"
 
+    // En modo editor, SIEMPRE mostrar el botón de configuración
     if (editorMode) {
       configureBtn.style.display = "inline-flex"
       configureBtn.onclick = configure
+
+      // Agregar estilo especial para que sea visible incluso cuando la extensión está oculta
+      configureBtn.style.position = "fixed"
+      configureBtn.style.top = "10px"
+      configureBtn.style.right = "10px"
+      configureBtn.style.zIndex = "10000"
     } else {
       configureBtn.style.display = "none"
     }
-    // </CHANGE>
 
     try {
       const hasConfig = loadConfiguration()
@@ -538,10 +543,25 @@ function checkIfEditorMode() {
 }
 
 function hideExtension() {
+  const editorMode = isEditorMode()
+
+  if (editorMode) {
+    log("En modo editor, manteniendo botón de configuración visible")
+    // Solo ocultar el contenido principal, no el botón
+    const mainContainer = document.querySelector(".container")
+    if (mainContainer) {
+      mainContainer.style.opacity = "0"
+      setTimeout(() => {
+        mainContainer.style.display = "none"
+      }, 50)
+    }
+    return
+  }
+
+  // En modo de visualización, ocultar completamente
   document.body.style.opacity = "0"
   document.body.style.transition = "none"
 
-  // Luego, después de un pequeño delay, mover y redimensionar
   setTimeout(() => {
     document.body.classList.add("hidden")
     document.body.style.display = "block"
@@ -552,7 +572,6 @@ function hideExtension() {
     document.body.style.left = "0"
     document.body.style.overflow = "hidden"
   }, 50)
-  // </CHANGE>
 }
 
 function logMessage(message, type = "info", isEditorMode = false) {
