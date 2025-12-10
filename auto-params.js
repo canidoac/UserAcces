@@ -538,15 +538,20 @@ function checkIfEditorMode() {
 }
 
 function hideExtension() {
-  document.body.classList.add("hidden")
-  document.body.style.display = "block" // Mantener visible pero imperceptible
-  document.body.style.width = "1px"
-  document.body.style.height = "1px"
-  document.body.style.position = "fixed"
-  document.body.style.top = "0"
-  document.body.style.left = "0"
-  document.body.style.overflow = "hidden"
   document.body.style.opacity = "0"
+  document.body.style.transition = "none"
+
+  // Luego, después de un pequeño delay, mover y redimensionar
+  setTimeout(() => {
+    document.body.classList.add("hidden")
+    document.body.style.display = "block"
+    document.body.style.width = "1px"
+    document.body.style.height = "1px"
+    document.body.style.position = "fixed"
+    document.body.style.top = "0"
+    document.body.style.left = "0"
+    document.body.style.overflow = "hidden"
+  }, 50)
   // </CHANGE>
 }
 
