@@ -610,18 +610,35 @@ function addLog(message, type = "info") {
 // Mostrar éxito personalizado
 // =========================
 function showSuccess(title, subtitle, roleValue) {
-  log("showSuccess llamado con roleValue: " + roleValue)
-  log("CONFIG.hideAfterLoad: " + CONFIG.hideAfterLoad)
+  console.log("[v0] ========== DEBUG OCULTAR EXTENSION ==========")
+  console.log("[v0] showSuccess llamado")
+  console.log("[v0] roleValue:", roleValue)
+  console.log("[v0] roleValue tipo:", typeof roleValue)
+  console.log("[v0] CONFIG.hideAfterLoad:", CONFIG.hideAfterLoad)
+  console.log("[v0] CONFIG.hideAfterLoad tipo:", typeof CONFIG.hideAfterLoad)
+  console.log("[v0] roleValue uppercase:", roleValue ? roleValue.toString().toUpperCase() : "NULL")
+  console.log("[v0] Condición 1 - CONFIG.hideAfterLoad:", CONFIG.hideAfterLoad, "=", !!CONFIG.hideAfterLoad)
+  console.log("[v0] Condición 2 - roleValue existe:", !!roleValue)
+  console.log("[v0] Condición 3 - no es NO_ROLE:", roleValue ? roleValue.toString().toUpperCase() !== "NO_ROLE" : false)
+  console.log(
+    "[v0] TODAS las condiciones:",
+    CONFIG.hideAfterLoad && roleValue && roleValue.toString().toUpperCase() !== "NO_ROLE",
+  )
 
-  // Si está configurado para ocultar y el rol es válido, ocultar inmediatamente sin mostrar mensaje
-  if (CONFIG.hideAfterLoad && roleValue && roleValue.toString().toUpperCase() !== "NO_ROLE") {
-    log("Condiciones cumplidas para ocultar. Ocultando inmediatamente...")
+  const shouldHide =
+    (CONFIG.hideAfterLoad === true || CONFIG.hideAfterLoad === "true") &&
+    roleValue &&
+    roleValue.toString().toUpperCase() !== "NO_ROLE"
+
+  console.log("[v0] shouldHide final:", shouldHide)
+
+  if (shouldHide) {
+    console.log("[v0] ✓ Condiciones cumplidas, ejecutando hideExtension()...")
     hideExtension()
     return
   }
 
-  // Si no se va a ocultar, mostrar el mensaje de éxito normalmente
-  log("Mostrando mensaje de éxito sin ocultar")
+  console.log("[v0] ✗ NO se cumplen las condiciones, mostrando mensaje de éxito")
   updateStatus(`Hola ${roleValue}`, subtitle, "success", null, isEditorMode())
   log("Éxito: " + title, "success")
 }
