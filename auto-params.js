@@ -363,36 +363,58 @@ async function feedParameters(userData) {
     const dashboard = tableau.extensions.dashboardContent.dashboard
     const feedResults = []
 
+    log(`Alimentando ${CONFIG.parameterMappings.length} parámetros...`)
+
     for (const mapping of CONFIG.parameterMappings) {
       const paramName = mapping.parameterName
       const columnName = mapping.columnName
 
-      log("Alimentando parámetro: " + paramName + " con columna: " + columnName)
+      log(`Procesando parámetro: ${paramName} con columna: ${columnName}`)
 
       const value = userData[columnName]
 
       if (value === undefined || value === null) {
         log(`No se encontró valor para la columna: ${columnName}`, "warning")
+        feedResults.push({ parameter: paramName, value: null, success: false, error: "Valor no encontrado" })
         continue
       }
 
       try {
+        log(`Buscando parámetro en dashboard: ${paramName}`)
         const parameter = await dashboard.findParameterAsync(paramName)
+
+        log(`Parámetro encontrado. Valor actual: ${parameter.currentValue.value}`)
+        log(`Cambiando a: ${value}`)
+
         await parameter.changeValueAsync(value.toString())
 
-        log(`Parámetro actualizado: ${paramName} = ${value}`, "success")
+        log(`✓ Parámetro actualizado: ${paramName} = ${value}`, "success")
         feedResults.push({ parameter: paramName, value, success: true })
       } catch (error) {
-        log(`Error al actualizar parámetro ${paramName}: ${error}`, "error")
+        log(`✗ Error al actualizar parámetro ${paramName}: ${error}`, "error")
         feedResults.push({ parameter: paramName, value, success: false, error: error.message })
       }
     }
 
     const successCount = feedResults.filter((r) => r.success).length
-    log("Parámetros actualizados: " + successCount + " de " + feedResults.length)
+    const totalCount = feedResults.length
+
+    log(`Resultado: ${successCount} de ${totalCount} parámetros actualizados exitosamente`)
+
+    feedResults.forEach((result) => {
+      if (result.success) {
+        log(`  ✓ ${result.parameter}: ${result.value}`, "success")
+      } else {
+        log(`  ✗ ${result.parameter}: ${result.error}`, "error")
+      }
+    })
 
     if (successCount === 0) {
       throw new Error("No se pudo actualizar ningún parámetro")
+    }
+
+    if (successCount < totalCount) {
+      log(`Advertencia: Solo se actualizaron ${successCount} de ${totalCount} parámetros`, "warning")
     }
 
     return feedResults
@@ -552,14 +574,18 @@ function addLog(message, type = "info") {
 // Mostrar éxito personalizado
 // =========================
 function showSuccess(title, subtitle, roleValue) {
+  log("showSuccess llamado con roleValue: " + roleValue)
+  log("CONFIG.hideAfterLoad: " + CONFIG.hideAfterLoad)
+
   // Si está configurado para ocultar y el rol es válido, ocultar inmediatamente sin mostrar mensaje
   if (CONFIG.hideAfterLoad && roleValue && roleValue.toString().toUpperCase() !== "NO_ROLE") {
-    log("Ocultando extensión inmediatamente sin mostrar mensaje de éxito")
+    log("Condiciones cumplidas para ocultar. Ocultando inmediatamente...")
     hideExtension()
     return
   }
 
   // Si no se va a ocultar, mostrar el mensaje de éxito normalmente
+  log("Mostrando mensaje de éxito sin ocultar")
   updateStatus(`Hola ${roleValue}`, subtitle, "success", null, isEditorMode())
   log("Éxito: " + title, "success")
 }

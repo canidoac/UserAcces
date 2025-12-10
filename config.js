@@ -359,16 +359,19 @@ function saveConfiguration() {
   const mappingDivs = document.querySelectorAll(".mapping-section")
   mappings = []
 
-  mappingDivs.forEach((div) => {
+  mappingDivs.forEach((div, idx) => {
     const columnName = div.querySelector(".column-name").value
     const parameterName = div.querySelector(".parameter-name").value
+
+    console.log(`[v0] Mapeo ${idx + 1}: Columna="${columnName}", Parámetro="${parameterName}"`)
 
     if (columnName && parameterName) {
       mappings.push({ columnName, parameterName })
     }
   })
 
-  console.log("[v0] Mapeos:", mappings)
+  console.log("[v0] Total mapeos válidos:", mappings.length)
+  console.log("[v0] Mapeos completos:", JSON.stringify(mappings))
 
   if (mappings.length === 0) {
     alert("Debes agregar al menos un mapeo de columna a parámetro")
@@ -378,12 +381,26 @@ function saveConfiguration() {
   const parentTableau = window.parent.tableau
 
   parentTableau.extensions.settings.set("worksheetName", worksheetName)
+  console.log("[v0] ✓ worksheetName guardado")
+
   parentTableau.extensions.settings.set("dataSourceName", dataSourceName)
+  console.log("[v0] ✓ dataSourceName guardado")
+
   parentTableau.extensions.settings.set("usernameColumn", usernameColumn)
-  parentTableau.extensions.settings.set("parameterMappings", JSON.stringify(mappings))
+  console.log("[v0] ✓ usernameColumn guardado")
+
+  const mappingsString = JSON.stringify(mappings)
+  parentTableau.extensions.settings.set("parameterMappings", mappingsString)
+  console.log("[v0] ✓ parameterMappings guardado:", mappingsString)
+
   parentTableau.extensions.settings.set("hideAfterLoad", hideAfterLoad.toString())
+  console.log("[v0] ✓ hideAfterLoad guardado:", hideAfterLoad)
+
   parentTableau.extensions.settings.set("errorMessage", errorMessage)
+  console.log("[v0] ✓ errorMessage guardado")
+
   parentTableau.extensions.settings.set("configured", "true")
+  console.log("[v0] ✓ configured guardado")
 
   console.log("[v0] Todas las configuraciones establecidas, guardando...")
 
@@ -445,4 +462,45 @@ function importFromCSV() {
   alert(`Se importaron ${mappings.length} mapeos correctamente`)
 
   document.getElementById("csvInput").value = ""
+}
+
+function copyConfigurationCSV() {
+  const mappingDivs = document.querySelectorAll(".mapping-section")
+
+  if (mappingDivs.length === 0) {
+    alert("No hay mapeos configurados para copiar")
+    return
+  }
+
+  const csvPairs = []
+
+  mappingDivs.forEach((div) => {
+    const columnName = div.querySelector(".column-name").value
+    const parameterName = div.querySelector(".parameter-name").value
+
+    if (columnName && parameterName) {
+      csvPairs.push(columnName)
+      csvPairs.push(parameterName)
+    }
+  })
+
+  if (csvPairs.length === 0) {
+    alert("No hay mapeos válidos para copiar")
+    return
+  }
+
+  const csvString = csvPairs.join(",")
+
+  // Copiar al portapapeles
+  navigator.clipboard
+    .writeText(csvString)
+    .then(() => {
+      console.log("[v0] Configuración copiada al portapapeles:", csvString)
+      alert(`✓ Configuración copiada al portapapeles!\n\n${csvString}`)
+    })
+    .catch((error) => {
+      console.error("[v0] Error al copiar:", error)
+      // Fallback: mostrar en alert para copiar manualmente
+      alert(`Copia esto manualmente:\n\n${csvString}`)
+    })
 }
