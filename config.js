@@ -3,6 +3,7 @@ let mappings = []
 let tableau = null
 let dashboard = null
 let availableColumns = []
+let worksheets = []
 
 function waitForTableau() {
   return new Promise((resolve, reject) => {
@@ -65,61 +66,34 @@ async function loadAvailableData() {
       throw new Error("No se pudo acceder al dashboard")
     }
 
-    const dataSourceSelect = document.getElementById("dataSource")
-    const allDataSources = []
+    const worksheetSelect = document.getElementById("worksheet")
+    worksheets = dashboard.worksheets
 
-    console.log("[v0] Total worksheets:", dashboard.worksheets.length)
+    console.log("[v0] Total worksheets:", worksheets.length)
 
-    const worksheetPromises = dashboard.worksheets.map(async (worksheet) => {
-      try {
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000))
+    worksheets.forEach((ws) => {
+      const option = document.createElement("option")
+      option.value = ws.name
+      option.textContent = ws.name
+      worksheetSelect.appendChild(option)
+    })
 
-        const dataSourcesPromise = worksheet.getDataSourcesAsync()
-
-        const dataSources = await Promise.race([dataSourcesPromise, timeoutPromise])
-
-        return {
-          worksheetName: worksheet.name,
-          dataSources: dataSources,
-        }
-      } catch (err) {
-        console.warn("[v0] Error o timeout en worksheet:", worksheet.name)
-        return { worksheetName: worksheet.name, dataSources: [] }
+    worksheetSelect.addEventListener("change", async (e) => {
+      const selectedWorksheetName = e.target.value
+      if (selectedWorksheetName) {
+        await loadDataSourcesFromWorksheet(selectedWorksheetName)
+      } else {
+        const dataSourceSelect = document.getElementById("dataSource")
+        dataSourceSelect.innerHTML = '<option value="">Primero selecciona una hoja...</option>'
       }
     })
 
-    const results = await Promise.all(worksheetPromises)
-
-    results.forEach((result) => {
-      result.dataSources.forEach((ds) => {
-        if (!allDataSources.find((existing) => existing.name === ds.name)) {
-          allDataSources.push(ds)
-          console.log("[v0] Fuente de datos encontrada:", ds.name)
-        }
-      })
-    })
-
-    console.log("[v0] Total fuentes de datos únicas:", allDataSources.length)
-
-    if (allDataSources.length === 0) {
-      console.warn("[v0] No se encontraron fuentes de datos")
-      const option = document.createElement("option")
-      option.value = ""
-      option.textContent = "No hay fuentes de datos disponibles"
-      dataSourceSelect.appendChild(option)
-    } else {
-      allDataSources.forEach((ds) => {
-        const option = document.createElement("option")
-        option.value = ds.name
-        option.textContent = ds.name
-        dataSourceSelect.appendChild(option)
-      })
-    }
-
+    const dataSourceSelect = document.getElementById("dataSource")
     dataSourceSelect.addEventListener("change", async (e) => {
       const selectedDataSourceName = e.target.value
       if (selectedDataSourceName) {
-        await loadColumnsFromDataSource(selectedDataSourceName, allDataSources)
+        const selectedWorksheetName = document.getElementById("worksheet").value
+        await loadColumnsFromDataSource(selectedDataSourceName, selectedWorksheetName)
       } else {
         availableColumns = []
       }
@@ -136,13 +110,56 @@ async function loadAvailableData() {
   }
 }
 
-async function loadColumnsFromDataSource(dataSourceName, allDataSources) {
+async function loadDataSourcesFromWorksheet(worksheetName) {
+  try {
+    console.log("[v0] Cargando fuentes de datos del worksheet:", worksheetName)
+
+    const worksheet = worksheets.find((ws) => ws.name === worksheetName)
+    if (!worksheet) {
+      throw new Error("Worksheet no encontrado")
+    }
+
+    const dataSources = await worksheet.getDataSourcesAsync()
+    const dataSourceSelect = document.getElementById("dataSource")
+
+    dataSourceSelect.innerHTML = '<option value="">Seleccionar...</option>'
+
+    console.log("[v0] Fuentes de datos en el worksheet:", dataSources.length)
+
+    dataSources.forEach((ds) => {
+      const option = document.createElement("option")
+      option.value = ds.name
+      option.textContent = ds.name
+      dataSourceSelect.appendChild(option)
+      console.log("[v0] Fuente de datos:", ds.name)
+    })
+
+    if (dataSources.length === 0) {
+      const option = document.createElement("option")
+      option.value = ""
+      option.textContent = "No hay fuentes de datos en esta hoja"
+      dataSourceSelect.appendChild(option)
+    }
+  } catch (error) {
+    console.error("[v0] Error cargando fuentes de datos del worksheet:", error)
+    alert("Error al cargar fuentes de datos: " + error.message)
+  }
+}
+
+async function loadColumnsFromDataSource(dataSourceName, worksheetName) {
   try {
     console.log("[v0] Cargando columnas de:", dataSourceName)
 
-    const selectedDataSource = allDataSources.find((ds) => ds.name === dataSourceName)
+    const worksheet = worksheets.find((ws) => ws.name === worksheetName)
+    if (!worksheet) {
+      throw new Error("Worksheet no encontrado")
+    }
+
+    const dataSources = await worksheet.getDataSourcesAsync()
+    const selectedDataSource = dataSources.find((ds) => ds.name === dataSourceName)
+
     if (!selectedDataSource) {
-      console.error("[v0] Fuente de datos no encontrada")
+      console.error("[v0] Fuente de datos no encontrada en el worksheet")
       return
     }
 
@@ -154,7 +171,7 @@ async function loadColumnsFromDataSource(dataSourceName, allDataSources) {
 
     const logicalTableId = logicalTables[0].id
     const dataTable = await selectedDataSource.getLogicalTableDataAsync(logicalTableId, {
-      maxRows: 1, // Solo necesitamos 1 fila para obtener las columnas
+      maxRows: 1,
     })
 
     availableColumns = dataTable.columns.map((c) => c.fieldName)
@@ -167,33 +184,23 @@ async function loadColumnsFromDataSource(dataSourceName, allDataSources) {
     try {
       console.log("[v0] Intentando método alternativo para obtener columnas...")
 
-      for (const worksheet of dashboard.worksheets) {
-        const dataSources = await worksheet.getDataSourcesAsync()
-        const matchingDs = dataSources.find((ds) => ds.name === dataSourceName)
-
-        if (matchingDs) {
-          const summaryData = await worksheet.getSummaryDataAsync()
-          availableColumns = summaryData.columns.map((c) => c.fieldName)
-          console.log("[v0] Columnas cargadas con método alternativo:", availableColumns)
-          updateColumnDropdowns()
-          return
-        }
-      }
-
-      throw new Error("No se pudo cargar las columnas con ningún método")
+      const worksheet = worksheets.find((ws) => ws.name === worksheetName)
+      const summaryData = await worksheet.getSummaryDataAsync()
+      availableColumns = summaryData.columns.map((c) => c.fieldName)
+      console.log("[v0] Columnas cargadas con método alternativo:", availableColumns)
+      updateColumnDropdowns()
     } catch (altError) {
       console.error("[v0] Error con método alternativo:", altError)
       alert(
         "Error al cargar columnas: " +
           error.message +
-          ". Verifica que la fuente de datos tenga datos y esté siendo usada en algún worksheet.",
+          ". Verifica que la fuente de datos tenga datos y esté siendo usada en el worksheet.",
       )
     }
   }
 }
 
 function updateColumnDropdowns() {
-  // Actualizar columna de username
   const usernameSelect = document.getElementById("usernameColumn")
   const currentUsernameValue = usernameSelect.value
   usernameSelect.innerHTML = '<option value="">Seleccionar...</option>'
@@ -208,7 +215,6 @@ function updateColumnDropdowns() {
     usernameSelect.appendChild(option)
   })
 
-  // Actualizar columnas en mapeos
   const columnSelects = document.querySelectorAll(".column-name")
   columnSelects.forEach((select) => {
     const currentValue = select.value
@@ -226,33 +232,40 @@ function updateColumnDropdowns() {
   })
 }
 
-// Cargar configuración actual
 function loadCurrentConfiguration() {
   const settings = tableau.extensions.settings.getAll()
 
-  if (settings.dataSourceName) {
-    document.getElementById("dataSource").value = settings.dataSourceName
-    document.getElementById("usernameColumn").value = settings.usernameColumn || "username"
+  if (settings.worksheetName) {
+    document.getElementById("worksheet").value = settings.worksheetName
 
-    // Cargar nuevas opciones
-    document.getElementById("hideAfterLoad").checked = settings.hideAfterLoad === "true"
-    document.getElementById("errorMessage").value = settings.errorMessage || ""
-
-    mappings = JSON.parse(settings.parameterMappings || "[]")
-
-    const dataSourceSelect = document.getElementById("dataSource")
+    const worksheetSelect = document.getElementById("worksheet")
     const event = new Event("change")
-    dataSourceSelect.dispatchEvent(event)
+    worksheetSelect.dispatchEvent(event)
 
     setTimeout(() => {
-      mappings.forEach((mapping) => addMapping(mapping))
+      if (settings.dataSourceName) {
+        document.getElementById("dataSource").value = settings.dataSourceName
+        document.getElementById("usernameColumn").value = settings.usernameColumn || "username"
+
+        document.getElementById("hideAfterLoad").checked = settings.hideAfterLoad === "true"
+        document.getElementById("errorMessage").value = settings.errorMessage || ""
+
+        mappings = JSON.parse(settings.parameterMappings || "[]")
+
+        const dataSourceSelect = document.getElementById("dataSource")
+        const dsEvent = new Event("change")
+        dataSourceSelect.dispatchEvent(dsEvent)
+
+        setTimeout(() => {
+          mappings.forEach((mapping) => addMapping(mapping))
+        }, 500)
+      }
     }, 500)
   } else {
     addMapping()
   }
 }
 
-// Agregar nuevo mapeo
 function addMapping(existingMapping = null) {
   const container = document.getElementById("mappingsContainer")
   const index = mappings.length
@@ -301,7 +314,6 @@ function addMapping(existingMapping = null) {
   }
 }
 
-// Eliminar mapeo
 function removeMapping(button) {
   const mappingDiv = button.closest(".mapping-section")
   const index = Array.from(mappingDiv.parentNode.children).indexOf(mappingDiv)
@@ -310,18 +322,24 @@ function removeMapping(button) {
   mappingDiv.remove()
 }
 
-// Guardar configuración
 function saveConfiguration() {
+  const worksheetName = document.getElementById("worksheet").value
   const dataSourceName = document.getElementById("dataSource").value
   const usernameColumn = document.getElementById("usernameColumn").value
   const hideAfterLoad = document.getElementById("hideAfterLoad").checked
   const errorMessage = document.getElementById("errorMessage").value.trim()
 
   console.log("[v0] Guardando configuración...")
+  console.log("[v0] Worksheet:", worksheetName)
   console.log("[v0] Fuente de datos:", dataSourceName)
   console.log("[v0] Columna username:", usernameColumn)
   console.log("[v0] Ocultar después de cargar:", hideAfterLoad)
   console.log("[v0] Mensaje de error:", errorMessage)
+
+  if (!worksheetName) {
+    alert("Debes seleccionar un worksheet")
+    return
+  }
 
   if (!dataSourceName) {
     alert("Debes seleccionar una fuente de datos")
@@ -347,6 +365,7 @@ function saveConfiguration() {
     return
   }
 
+  tableau.extensions.settings.set("worksheetName", worksheetName)
   tableau.extensions.settings.set("dataSourceName", dataSourceName)
   tableau.extensions.settings.set("usernameColumn", usernameColumn)
   tableau.extensions.settings.set("parameterMappings", JSON.stringify(mappings))
@@ -365,7 +384,6 @@ function saveConfiguration() {
     })
 }
 
-// Cerrar diálogo
 function closeDialog() {
   tableau.extensions.ui.closeDialog("cancelled")
 }
@@ -378,7 +396,6 @@ function importFromCSV() {
     return
   }
 
-  // Parsear el CSV: Columna1,Parametro1,Columna2,Parametro2,...
   const values = csvInput
     .split(",")
     .map((v) => v.trim())
@@ -389,22 +406,18 @@ function importFromCSV() {
     return
   }
 
-  // Limpiar mapeos existentes
   const container = document.getElementById("mappingsContainer")
   container.innerHTML = ""
   mappings = []
 
-  // Crear mapeos desde el CSV
   for (let i = 0; i < values.length; i += 2) {
     const columnName = values[i]
     const parameterName = values[i + 1]
 
-    // Verificar que la columna exista
     if (availableColumns.length > 0 && !availableColumns.includes(columnName)) {
       console.warn(`[v0] Columna "${columnName}" no encontrada en la fuente de datos`)
     }
 
-    // Verificar que el parámetro exista
     const paramExists = availableParameters.find((p) => p.name === parameterName)
     if (!paramExists) {
       console.warn(`[v0] Parámetro "${parameterName}" no encontrado en el dashboard`)
@@ -416,6 +429,5 @@ function importFromCSV() {
   console.log(`[v0] Importados ${mappings.length} mapeos desde CSV`)
   alert(`Se importaron ${mappings.length} mapeos correctamente`)
 
-  // Limpiar el input
   document.getElementById("csvInput").value = ""
 }

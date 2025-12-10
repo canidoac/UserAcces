@@ -113,10 +113,21 @@
   <div class="config-container">
     <h2>Configuración de Auto Parámetros</h2>
     
+    <!-- Agregando selección de worksheet primero -->
+    <div class="form-group">
+      <label for="worksheet">Worksheet (Hoja) de Datos:</label>
+      <select id="worksheet">
+        <option value="">Seleccionar hoja...</option>
+      </select>
+      <p style="color: #6b7280; font-size: 12px; margin-top: 5px;">
+        Primero selecciona la hoja que contiene la fuente de datos de usuarios
+      </p>
+    </div>
+    
     <div class="form-group">
       <label for="dataSource">Fuente de Datos de Usuarios:</label>
       <select id="dataSource">
-        <option value="">Seleccionar...</option>
+        <option value="">Primero selecciona una hoja...</option>
       </select>
     </div>
     
