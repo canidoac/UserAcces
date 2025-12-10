@@ -363,17 +363,31 @@ async function feedParameters(userData) {
     const dashboard = tableau.extensions.dashboardContent.dashboard
     const feedResults = []
 
+    console.log("[v0] ===== INICIO FEED PARAMETERS =====")
+    console.log("[v0] userData recibido:", userData)
+    console.log("[v0] CONFIG.parameterMappings:", CONFIG.parameterMappings)
+    console.log("[v0] Número de mapeos:", CONFIG.parameterMappings.length)
+
     log(`Alimentando ${CONFIG.parameterMappings.length} parámetros...`)
 
     for (const mapping of CONFIG.parameterMappings) {
       const paramName = mapping.parameterName
       const columnName = mapping.columnName
 
+      console.log("[v0] --------------------------------")
+      console.log("[v0] Procesando mapping:", mapping)
+      console.log("[v0] parameterName:", paramName)
+      console.log("[v0] columnName:", columnName)
+
       log(`Procesando parámetro: ${paramName} con columna: ${columnName}`)
 
       const value = userData[columnName]
 
+      console.log("[v0] Valor obtenido de userData['" + columnName + "']:", value)
+      console.log("[v0] Tipo de valor:", typeof value)
+
       if (value === undefined || value === null) {
+        console.log("[v0] ✗ Valor no encontrado o es null/undefined")
         log(`No se encontró valor para la columna: ${columnName}`, "warning")
         feedResults.push({ parameter: paramName, value: null, success: false, error: "Valor no encontrado" })
         continue
@@ -381,16 +395,31 @@ async function feedParameters(userData) {
 
       try {
         log(`Buscando parámetro en dashboard: ${paramName}`)
+        console.log("[v0] Buscando parámetro:", paramName)
+
         const parameter = await dashboard.findParameterAsync(paramName)
+
+        console.log("[v0] Parámetro encontrado:", parameter.name)
+        console.log("[v0] Valor actual del parámetro:", parameter.currentValue.value)
+        console.log("[v0] Tipo de valor actual:", parameter.currentValue.dataType)
 
         log(`Parámetro encontrado. Valor actual: ${parameter.currentValue.value}`)
         log(`Cambiando a: ${value}`)
 
-        await parameter.changeValueAsync(value.toString())
+        const stringValue = value.toString()
+        console.log("[v0] Valor convertido a string:", stringValue)
+
+        await parameter.changeValueAsync(stringValue)
+
+        console.log("[v0] ✓ Parámetro actualizado exitosamente")
 
         log(`✓ Parámetro actualizado: ${paramName} = ${value}`, "success")
         feedResults.push({ parameter: paramName, value, success: true })
       } catch (error) {
+        console.log("[v0] ✗ Error al actualizar parámetro:", error)
+        console.log("[v0] Error.message:", error.message)
+        console.log("[v0] Error.stack:", error.stack)
+
         log(`✗ Error al actualizar parámetro ${paramName}: ${error}`, "error")
         feedResults.push({ parameter: paramName, value, success: false, error: error.message })
       }
@@ -398,6 +427,12 @@ async function feedParameters(userData) {
 
     const successCount = feedResults.filter((r) => r.success).length
     const totalCount = feedResults.length
+
+    console.log("[v0] ===== FIN FEED PARAMETERS =====")
+    console.log("[v0] Total intentados:", totalCount)
+    console.log("[v0] Exitosos:", successCount)
+    console.log("[v0] Fallidos:", totalCount - successCount)
+    console.log("[v0] Resultados detallados:", feedResults)
 
     log(`Resultado: ${successCount} de ${totalCount} parámetros actualizados exitosamente`)
 
@@ -419,6 +454,7 @@ async function feedParameters(userData) {
 
     return feedResults
   } catch (error) {
+    console.log("[v0] ERROR FATAL en feedParameters:", error)
     log("Error al alimentar parámetros: " + error, "error")
     throw error
   }
