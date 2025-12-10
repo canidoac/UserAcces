@@ -127,57 +127,45 @@ tableau.extensions.initializeAsync({ configure: contextMenuCallbacks.configure }
 // ============================
 async function autoLoadParameters() {
   try {
-    log("Iniciando autoLoadParameters")
-    updateStatus("loading", "Cargando...", "loading", null, isEditorMode())
+    const startTime = Date.now()
+    log("Iniciando carga automática de parámetros...")
 
-    log("Verificando configuración...")
-    updateStatus("loading", "Cargando...", "loading", null, isEditorMode())
-    log("CONFIG: " + JSON.stringify(CONFIG))
-
-    if (!CONFIG.dataSourceName || CONFIG.parameterMappings.length === 0) {
-      log("No hay configuración, mostrando botón")
-      showConfigureButton()
-      return
-    }
-
-    log("Buscando fuente de datos: " + CONFIG.dataSourceName)
-    updateStatus("loading", "Cargando...", "loading", null, isEditorMode())
-    const dataSource = await getDataSource(CONFIG.dataSourceName)
-
-    if (!dataSource) {
-      log(`Fuente de datos no encontrada: ${CONFIG.dataSourceName}`, "error")
-      showError(`No se encontró la fuente de datos: ${CONFIG.dataSourceName}`)
-      return
-    }
-
-    log(`Fuente de datos encontrada: ${dataSource.name}`, "success")
-
-    log("Obteniendo datos ya filtrados por Tableau...")
-    updateStatus("loading", "Cargando...", "loading", null, isEditorMode())
-
-    const userData = await getFilteredUserData(dataSource)
+    const userData = await getFilteredUserData()
 
     if (!userData) {
-      const errorMsg = CONFIG.errorMessage || "No se encontraron datos para tu usuario"
+      const errorMsg = CONFIG.errorMessage || "No se pudo obtener tus datos. Por favor, contacta con soporte."
+      log("No se encontraron datos del usuario", "error")
       showError(errorMsg)
       return
     }
 
-    log(`Datos obtenidos correctamente`, "success")
-
-    log("Alimentando parámetros...")
-    updateStatus("loading", "Cargando...", "loading", null, isEditorMode())
+    log("Datos cargados correctamente para tu usuario")
 
     const feedResults = await feedParameters(userData)
+
+    const successCount = feedResults.filter((r) => r.success).length
+
+    if (successCount === 0) {
+      const errorMsg = CONFIG.errorMessage || "No se pudo actualizar ningún parámetro. Contacta con soporte."
+      log("No se actualizó ningún parámetro", "error")
+      showError(errorMsg)
+      return
+    }
 
     const firstMapping = CONFIG.parameterMappings[0]
     const firstParamValue = userData[firstMapping.columnName]
 
     log("Valor del parámetro principal: " + firstParamValue)
 
-    if (!firstParamValue || firstParamValue.toString().toUpperCase() === "NO_ROLE") {
+    if (
+      !firstParamValue ||
+      firstParamValue === null ||
+      firstParamValue.toString().trim() === "" ||
+      firstParamValue.toString().toUpperCase() === "NO_ROLE" ||
+      firstParamValue.toString().toUpperCase() === "NULL"
+    ) {
       const errorMsg = CONFIG.errorMessage || "No tienes un rol asignado. Contacta con soporte."
-      log("Usuario con NO_ROLE, mostrando error")
+      log("Usuario sin rol válido (NULL, vacío o NO_ROLE), mostrando error")
       showError(errorMsg)
       return
     }
@@ -196,9 +184,9 @@ async function autoLoadParameters() {
   }
 }
 
-// ========================
+// ============================
 // Obtener fuente de datos
-// ========================
+// ============================
 async function getDataSource(dataSourceName) {
   try {
     const dashboard = tableau.extensions.dashboardContent.dashboard
@@ -228,7 +216,7 @@ async function getDataSource(dataSourceName) {
 // ============================
 // Obtener datos ya filtrados
 // ============================
-async function getFilteredUserData(dataSource) {
+async function getFilteredUserData() {
   try {
     log("Obteniendo datos de la fuente...")
 
@@ -259,7 +247,7 @@ async function getFilteredUserData(dataSource) {
         const dataSources = await ws.getDataSourcesAsync()
         log("Fuentes de datos encontradas: " + dataSources.map((ds) => ds.name).join(", "))
 
-        if (dataSources.some((ds) => ds.name === dataSource.name)) {
+        if (dataSources.some((ds) => ds.name === CONFIG.dataSourceName)) {
           worksheet = ws
           log("Worksheet encontrado: " + ws.name)
           break
