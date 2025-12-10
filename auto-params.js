@@ -483,14 +483,19 @@ function loadConfiguration() {
   try {
     log("Cargando configuración...")
     const settings = tableau.extensions.settings.getAll()
-    log("Settings: " + JSON.stringify(settings))
+    log("Settings completos: " + JSON.stringify(settings))
 
     if (settings.dataSourceName) {
       CONFIG.dataSourceName = settings.dataSourceName
       CONFIG.worksheetName = settings.worksheetName || null
       CONFIG.usernameColumn = settings.usernameColumn || "username"
       CONFIG.parameterMappings = JSON.parse(settings.parameterMappings || "[]")
-      CONFIG.hideAfterLoad = settings.hideAfterLoad === "true"
+
+      log("hideAfterLoad desde settings (raw): " + settings.hideAfterLoad)
+      log("hideAfterLoad tipo: " + typeof settings.hideAfterLoad)
+      CONFIG.hideAfterLoad = settings.hideAfterLoad === "true" || settings.hideAfterLoad === true
+      log("CONFIG.hideAfterLoad (procesado): " + CONFIG.hideAfterLoad)
+
       CONFIG.errorMessage = settings.errorMessage || ""
 
       log("Configuración cargada: " + JSON.stringify(CONFIG))

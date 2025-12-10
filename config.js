@@ -235,6 +235,11 @@ function updateColumnDropdowns() {
 function loadCurrentConfiguration() {
   const settings = tableau.extensions.settings.getAll()
 
+  console.log("[v0] === CARGANDO CONFIGURACIÓN ===")
+  console.log("[v0] Settings completos:", settings)
+  console.log("[v0] hideAfterLoad desde settings:", settings.hideAfterLoad)
+  console.log("[v0] hideAfterLoad tipo:", typeof settings.hideAfterLoad)
+
   if (settings.worksheetName) {
     document.getElementById("worksheet").value = settings.worksheetName
 
@@ -252,7 +257,12 @@ function loadCurrentConfiguration() {
         document.getElementById("dataSource").value = settings.dataSourceName
         document.getElementById("usernameColumn").value = settings.usernameColumn || "username"
 
-        document.getElementById("hideAfterLoad").checked = settings.hideAfterLoad === "true"
+        const hideAfterLoadCheckbox = document.getElementById("hideAfterLoad")
+        const hideAfterLoadValue = settings.hideAfterLoad === "true" || settings.hideAfterLoad === true
+        hideAfterLoadCheckbox.checked = hideAfterLoadValue
+        console.log("[v0] hideAfterLoad checkbox establecido a:", hideAfterLoadValue)
+        console.log("[v0] hideAfterLoad checkbox.checked:", hideAfterLoadCheckbox.checked)
+
         document.getElementById("errorMessage").value = settings.errorMessage || ""
 
         await loadColumnsFromDataSource(settings.dataSourceName, settings.worksheetName)
@@ -339,11 +349,12 @@ function saveConfiguration() {
   const hideAfterLoad = document.getElementById("hideAfterLoad").checked
   const errorMessage = document.getElementById("errorMessage").value.trim()
 
-  console.log("[v0] Guardando configuración...")
+  console.log("[v0] === GUARDANDO CONFIGURACIÓN ===")
   console.log("[v0] Worksheet:", worksheetName)
   console.log("[v0] Fuente de datos:", dataSourceName)
   console.log("[v0] Columna username:", usernameColumn)
-  console.log("[v0] Ocultar después de cargar:", hideAfterLoad)
+  console.log("[v0] hideAfterLoad (checkbox.checked):", hideAfterLoad)
+  console.log("[v0] hideAfterLoad tipo:", typeof hideAfterLoad)
   console.log("[v0] Mensaje de error:", errorMessage)
 
   if (!worksheetName) {
@@ -393,8 +404,13 @@ function saveConfiguration() {
   parentTableau.extensions.settings.set("parameterMappings", mappingsString)
   console.log("[v0] ✓ parameterMappings guardado:", mappingsString)
 
-  parentTableau.extensions.settings.set("hideAfterLoad", hideAfterLoad.toString())
-  console.log("[v0] ✓ hideAfterLoad guardado:", hideAfterLoad)
+  const hideAfterLoadString = String(hideAfterLoad)
+  parentTableau.extensions.settings.set("hideAfterLoad", hideAfterLoadString)
+  console.log("[v0] ✓ hideAfterLoad guardado como string:", hideAfterLoadString)
+
+  // Verificar que se guardó correctamente
+  const verificarHideAfterLoad = parentTableau.extensions.settings.get("hideAfterLoad")
+  console.log("[v0] ✓ hideAfterLoad verificado desde settings:", verificarHideAfterLoad)
 
   parentTableau.extensions.settings.set("errorMessage", errorMessage)
   console.log("[v0] ✓ errorMessage guardado")
@@ -408,6 +424,8 @@ function saveConfiguration() {
     .saveAsync()
     .then(() => {
       console.log("[v0] Configuración guardada exitosamente en el workbook")
+      const allSettingsAfterSave = parentTableau.extensions.settings.getAll()
+      console.log("[v0] Settings después de saveAsync:", allSettingsAfterSave)
       tableau.extensions.ui.closeDialog("saved")
     })
     .catch((error) => {
