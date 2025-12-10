@@ -61,6 +61,16 @@ tableau.extensions.initializeAsync().then(
 
     const editorMode = isEditorMode()
 
+    if (!editorMode) {
+      document.body.style.width = "100vw"
+      document.body.style.height = "100vh"
+      document.body.style.position = "fixed"
+      document.body.style.top = "0"
+      document.body.style.left = "0"
+      document.body.style.padding = "20px"
+    }
+    // </CHANGE>
+
     logContainer.style.display = editorMode ? "block" : "none"
 
     if (editorMode) {
@@ -529,9 +539,15 @@ function checkIfEditorMode() {
 
 function hideExtension() {
   document.body.classList.add("hidden")
-  document.body.style.display = "none"
-  document.body.style.height = "0px"
+  document.body.style.display = "block" // Mantener visible pero imperceptible
+  document.body.style.width = "1px"
+  document.body.style.height = "1px"
+  document.body.style.position = "fixed"
+  document.body.style.top = "0"
+  document.body.style.left = "0"
   document.body.style.overflow = "hidden"
+  document.body.style.opacity = "0"
+  // </CHANGE>
 }
 
 function logMessage(message, type = "info", isEditorMode = false) {
