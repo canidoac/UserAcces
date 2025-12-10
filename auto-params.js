@@ -9,6 +9,7 @@ const TEST_EMAIL = "andres.canido@mercadolibre.com"
 // Configuración de la extensión
 const CONFIG = {
   dataSourceName: null, // Nombre de la fuente de datos (se configura después)
+  worksheetName: null, // Nombre del worksheet que contiene los datos
   usernameColumn: "EMAIL", // Columna que contiene el username
   parameterMappings: [], // Mapeo de columnas a parámetros
   hideAfterLoad: false,
@@ -236,15 +237,33 @@ async function getFilteredUserData(dataSource) {
     }
 
     const dashboard = tableau.extensions.dashboardContent.dashboard
-    const worksheets = dashboard.worksheets
 
     let worksheet = null
-    for (const ws of worksheets) {
-      const dataSources = await ws.getDataSourcesAsync()
-      if (dataSources.some((ds) => ds.name === dataSource.name)) {
-        worksheet = ws
-        log("Worksheet encontrado: " + ws.name)
-        break
+
+    if (CONFIG.worksheetName) {
+      // Si hay un worksheet configurado, usarlo directamente
+      worksheet = dashboard.worksheets.find((ws) => ws.name === CONFIG.worksheetName)
+
+      if (worksheet) {
+        log(`Usando worksheet configurado: ${CONFIG.worksheetName}`)
+      } else {
+        throw new Error(`No se encontró el worksheet configurado: ${CONFIG.worksheetName}`)
+      }
+    } else {
+      // Fallback: buscar en todos los worksheets (comportamiento anterior)
+      log("No hay worksheet configurado, buscando en todos los worksheets...")
+      const worksheets = dashboard.worksheets
+
+      for (const ws of worksheets) {
+        log("Buscando en worksheet: " + ws.name)
+        const dataSources = await ws.getDataSourcesAsync()
+        log("Fuentes de datos encontradas: " + dataSources.map((ds) => ds.name).join(", "))
+
+        if (dataSources.some((ds) => ds.name === dataSource.name)) {
+          worksheet = ws
+          log("Worksheet encontrado: " + ws.name)
+          break
+        }
       }
     }
 
@@ -252,7 +271,7 @@ async function getFilteredUserData(dataSource) {
       throw new Error("No se encontró un worksheet que use la fuente de datos configurada")
     }
 
-    log("Leyendo datos del worksheet...")
+    log("Leyendo datos del worksheet: " + worksheet.name)
 
     const maxRows = TESTING_MODE ? 100 : 10
 
@@ -422,6 +441,7 @@ function loadConfiguration() {
 
     if (settings.dataSourceName) {
       CONFIG.dataSourceName = settings.dataSourceName
+      CONFIG.worksheetName = settings.worksheetName || null
       CONFIG.usernameColumn = settings.usernameColumn || "username"
       CONFIG.parameterMappings = JSON.parse(settings.parameterMappings || "[]")
       CONFIG.hideAfterLoad = settings.hideAfterLoad === "true"

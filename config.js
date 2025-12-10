@@ -238,11 +238,16 @@ function loadCurrentConfiguration() {
   if (settings.worksheetName) {
     document.getElementById("worksheet").value = settings.worksheetName
 
+    if (settings.parameterMappings) {
+      mappings = JSON.parse(settings.parameterMappings)
+      console.log("[v0] Mapeos cargados desde settings:", mappings)
+    }
+
     const worksheetSelect = document.getElementById("worksheet")
     const event = new Event("change")
     worksheetSelect.dispatchEvent(event)
 
-    setTimeout(() => {
+    setTimeout(async () => {
       if (settings.dataSourceName) {
         document.getElementById("dataSource").value = settings.dataSourceName
         document.getElementById("usernameColumn").value = settings.usernameColumn || "username"
@@ -250,15 +255,20 @@ function loadCurrentConfiguration() {
         document.getElementById("hideAfterLoad").checked = settings.hideAfterLoad === "true"
         document.getElementById("errorMessage").value = settings.errorMessage || ""
 
-        mappings = JSON.parse(settings.parameterMappings || "[]")
-
-        const dataSourceSelect = document.getElementById("dataSource")
-        const dsEvent = new Event("change")
-        dataSourceSelect.dispatchEvent(dsEvent)
+        await loadColumnsFromDataSource(settings.dataSourceName, settings.worksheetName)
 
         setTimeout(() => {
-          mappings.forEach((mapping) => addMapping(mapping))
-        }, 500)
+          const container = document.getElementById("mappingsContainer")
+          container.innerHTML = ""
+
+          console.log("[v0] Renderizando mapeos guardados:", mappings)
+
+          if (mappings.length > 0) {
+            mappings.forEach((mapping) => addMapping(mapping))
+          } else {
+            addMapping()
+          }
+        }, 300)
       }
     }, 500)
   } else {
