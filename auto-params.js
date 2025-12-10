@@ -54,7 +54,13 @@ const log = (message, type = "info") => {
 // Inicializar extensión
 log("Iniciando inicialización de extensión...")
 
-tableau.extensions.initializeAsync().then(
+const contextMenuCallbacks = {
+  configure: () => {
+    configure()
+  },
+}
+
+tableau.extensions.initializeAsync({ configure: contextMenuCallbacks.configure }).then(
   () => {
     startTime = Date.now()
     log("Extensión inicializada correctamente", "success")
