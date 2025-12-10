@@ -70,22 +70,34 @@ async function loadAvailableData() {
 
     console.log("[v0] Total worksheets:", dashboard.worksheets.length)
 
-    for (const worksheet of dashboard.worksheets) {
-      console.log("[v0] Analizando worksheet:", worksheet.name)
+    const worksheetPromises = dashboard.worksheets.map(async (worksheet) => {
       try {
-        const dataSources = await worksheet.getDataSourcesAsync()
-        console.log("[v0] Fuentes de datos en", worksheet.name, ":", dataSources.length)
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000))
 
-        dataSources.forEach((ds) => {
-          console.log("[v0] Fuente de datos encontrada:", ds.name)
-          if (!allDataSources.find((existing) => existing.name === ds.name)) {
-            allDataSources.push(ds)
-          }
-        })
+        const dataSourcesPromise = worksheet.getDataSourcesAsync()
+
+        const dataSources = await Promise.race([dataSourcesPromise, timeoutPromise])
+
+        return {
+          worksheetName: worksheet.name,
+          dataSources: dataSources,
+        }
       } catch (err) {
-        console.error("[v0] Error obteniendo fuentes de datos del worksheet:", worksheet.name, err)
+        console.warn("[v0] Error o timeout en worksheet:", worksheet.name)
+        return { worksheetName: worksheet.name, dataSources: [] }
       }
-    }
+    })
+
+    const results = await Promise.all(worksheetPromises)
+
+    results.forEach((result) => {
+      result.dataSources.forEach((ds) => {
+        if (!allDataSources.find((existing) => existing.name === ds.name)) {
+          allDataSources.push(ds)
+          console.log("[v0] Fuente de datos encontrada:", ds.name)
+        }
+      })
+    })
 
     console.log("[v0] Total fuentes de datos únicas:", allDataSources.length)
 
