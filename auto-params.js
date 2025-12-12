@@ -579,8 +579,21 @@ function hideExtension() {
 
   log(`Ocultando extensión (Modo: ${editorMode ? "Editor" : "Visualización"})`)
 
-  // Simplemente ocultar con opacity, sin cambiar tamaño ni posición
-  document.body.classList.add("hidden")
+  const container = document.querySelector(".dashboard-extension-container") || window.frameElement?.parentElement
+
+  if (container) {
+    container.style.position = "absolute"
+    container.style.left = "1px"
+    container.style.top = "1px"
+    container.style.width = "10px"
+    container.style.height = "10px"
+    log("Contenedor movido a (1,1) y reducido a 10x10px")
+  }
+
+  // Ocultar el body con opacity
+  document.body.style.opacity = "0"
+  document.body.style.width = "10px"
+  document.body.style.height = "10px"
 
   // En modo editor, mantener botón de configuración visible
   if (editorMode) {
