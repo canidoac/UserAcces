@@ -15,42 +15,22 @@
       box-sizing: border-box;
     }
     
-    /* Estilos adaptativos según modo editor/visualización */
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       background: linear-gradient(135deg, #a8d8f0 0%, #d4e7f5 100%);
+      width: 100%;
+      height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 20px;
       transition: opacity 0.3s ease;
     }
     
-    /* Modo editor: 10x10px en esquina superior izquierda */
-    body.editor-mode {
-      width: 10px;
-      height: 10px;
-      position: fixed;
-      top: 0;
-      left: 0;
-      min-height: unset;
-      padding: 0;
-    }
-    
-    /* Modo visualización: pantalla completa */
-    body.view-mode {
-      width: 100vw;
-      height: 100vh;
-      min-height: 100vh;
-      position: fixed;
-      top: 0;
-      left: 0;
-      padding: 20px;
-    }
-    
-    /* Clase para ocultar sin mover */
+    /* Clase para ocultar y deshabilitar interacción sin mover */
     body.hidden {
       opacity: 0 !important;
-      pointer-events: none;
+      pointer-events: none !important;
     }
     
     .container {
@@ -79,7 +59,7 @@
       transition: all 0.3s ease;
     }
     
-    /* Agregado spinner giratorio para loading */
+    /* Spinner giratorio para estado de carga */
     .status-icon.loading {
       background: #3b82f6;
       color: white;
@@ -174,6 +154,7 @@
       right: 10px;
       z-index: 99999;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      pointer-events: auto;
     }
     
     .btn-configure:hover {
@@ -212,7 +193,6 @@
     .log-entry.warning { color: #fbbf24; }
     .log-entry.info { color: #60a5fa; }
     
-    /* Icono de spinner usando Unicode */
     .spinner {
       display: inline-block;
       animation: spin 1.5s linear infinite;
@@ -222,7 +202,6 @@
 <body>
   <div class="container">
     <div class="card">
-      <!-- Cambiado a símbolo de carga circular -->
       <div class="status-icon loading" id="statusIcon">
         <span class="spinner">⟳</span>
       </div>

@@ -579,31 +579,33 @@ function hideExtension() {
 
   log(`Ocultando extensión (Modo: ${editorMode ? "Editor" : "Visualización"})`)
 
-  const container = document.querySelector(".dashboard-extension-container") || window.frameElement?.parentElement
-
-  if (container) {
-    container.style.position = "absolute"
-    container.style.left = "1px"
-    container.style.top = "1px"
-    container.style.width = "10px"
-    container.style.height = "10px"
-    log("Contenedor movido a (1,1) y reducido a 10x10px")
-  }
-
-  // Ocultar el body con opacity
   document.body.style.opacity = "0"
+  document.body.style.pointerEvents = "none"
   document.body.style.width = "10px"
   document.body.style.height = "10px"
 
-  // En modo editor, mantener botón de configuración visible
+  // Intentar mover el contenedor padre de Tableau si es accesible
+  const container = document.querySelector(".dashboard-extension-container") || window.frameElement?.parentElement
+
+  if (container) {
+    container.style.opacity = "0"
+    container.style.pointerEvents = "none"
+    log("Contenedor de extensión oculto y deshabilitado")
+  }
+
+  // En modo editor, mantener botón de configuración visible y clickeable
   if (editorMode) {
     const configBtn = document.getElementById("configureBtn")
     if (configBtn) {
       configBtn.style.opacity = "1"
       configBtn.style.visibility = "visible"
       configBtn.style.pointerEvents = "auto"
+      configBtn.style.zIndex = "10000"
+      log("Botón de configuración mantenido visible en modo editor")
     }
   }
+
+  log("Extensión oculta completamente - no bloqueará interacción con el dashboard")
 }
 
 // =========================
