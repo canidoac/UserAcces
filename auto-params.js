@@ -68,13 +68,12 @@ tableau.extensions.initializeAsync({ configure: contextMenuCallbacks.configure }
 
     const editorMode = isEditorMode()
 
-    if (!editorMode) {
-      document.body.style.width = "100vw"
-      document.body.style.height = "100vh"
-      document.body.style.position = "fixed"
-      document.body.style.top = "0"
-      document.body.style.left = "0"
-      document.body.style.padding = "20px"
+    if (editorMode) {
+      document.body.classList.add("editor-mode")
+      log("Modo editor: extensión 10x10px en esquina superior izquierda")
+    } else {
+      document.body.classList.add("view-mode")
+      log("Modo visualización: extensión pantalla completa")
     }
 
     logContainer.style.display = editorMode ? "block" : "none"
@@ -83,12 +82,6 @@ tableau.extensions.initializeAsync({ configure: contextMenuCallbacks.configure }
     if (editorMode) {
       configureBtn.style.display = "inline-flex"
       configureBtn.onclick = configure
-
-      // Agregar estilo especial para que sea visible incluso cuando la extensión está oculta
-      configureBtn.style.position = "fixed"
-      configureBtn.style.top = "10px"
-      configureBtn.style.right = "10px"
-      configureBtn.style.zIndex = "10000"
     } else {
       configureBtn.style.display = "none"
     }
@@ -584,50 +577,32 @@ function showSuccess(title, subtitle, roleValue) {
 function hideExtension() {
   const editorMode = isEditorMode()
 
+  log(`Ocultando extensión (Modo: ${editorMode ? "Editor" : "Visualización"})`)
+
+  // Simplemente ocultar con opacity, sin cambiar tamaño ni posición
+  document.body.classList.add("hidden")
+
+  // En modo editor, mantener botón de configuración visible
   if (editorMode) {
-    log("En modo editor, manteniendo botón de configuración visible")
-
-    // Ocultar todo el contenedor principal
-    const mainContainer = document.querySelector(".container")
-    if (mainContainer) {
-      mainContainer.style.opacity = "0"
-      setTimeout(() => {
-        mainContainer.style.display = "none"
-      }, 50)
-    }
-
-    // Asegurar que el botón de configuración permanezca visible
     const configBtn = document.getElementById("configureBtn")
     if (configBtn) {
-      configBtn.style.display = "inline-flex"
-      configBtn.style.position = "fixed"
-      configBtn.style.top = "10px"
-      configBtn.style.right = "10px"
-      configBtn.style.zIndex = "99999"
       configBtn.style.opacity = "1"
       configBtn.style.visibility = "visible"
+      configBtn.style.pointerEvents = "auto"
     }
-    return
   }
-
-  // En modo visualización, ocultar completamente y reducir tamaño
-  document.body.style.opacity = "0"
-
-  setTimeout(() => {
-    document.body.style.display = "block"
-    document.body.style.width = "1px"
-    document.body.style.height = "1px"
-    document.body.style.position = "fixed"
-    document.body.style.top = "0"
-    document.body.style.left = "0"
-    document.body.style.overflow = "hidden"
-  }, 50)
 }
 
+// =========================
+// Función para verificar si está en modo editor
+// =========================
 function checkIfEditorMode() {
   return isEditorMode()
 }
 
+// =========================
+// Función para registrar mensajes en el log
+// =========================
 function logMessage(message, type = "info", isEditorMode = false) {
   if (isEditorMode()) {
     console.log(`[v0] ${message}`)
