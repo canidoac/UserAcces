@@ -162,21 +162,34 @@
       </p>
     </div>
     
-    <!-- Agregando campo para URL acortada -->
+    <!-- Reemplazando campo de URL acortada por URL y texto del enlace -->
     <div class="form-group">
-      <label for="shortUrl">URL acortada (opcional):</label>
+      <label for="errorUrl">URL del enlace (opcional):</label>
       <input 
         type="text" 
-        id="shortUrl" 
-        placeholder="Ej: https://bit.ly/soporte-tickets"
-        maxlength="100"
+        id="errorUrl" 
+        placeholder="Ej: https://mercadolibre.atlassian.net/servicedesk/customer/portal/123"
+        maxlength="300"
       >
       <p style="color: #6b7280; font-size: 12px; margin-top: 5px;">
-        Si incluiste una URL larga en el mensaje de error, coloca aquí la versión acortada para mejor legibilidad
+        URL a la que se redirigirá cuando el usuario haga click en el enlace
       </p>
     </div>
-    <!-- Fin de opciones adicionales -->
     
+    <div class="form-group">
+      <label for="errorLinkText">Texto del enlace (opcional):</label>
+      <input 
+        type="text" 
+        id="errorLinkText" 
+        placeholder="Ej: Click Aquí, Crear Ticket, Contactar Soporte"
+        maxlength="50"
+      >
+      <p style="color: #6b7280; font-size: 12px; margin-top: 5px;">
+        Texto que se mostrará como enlace clickeable. Si está vacío, se mostrará la URL completa
+      </p>
+    </div>
+    <!-- Fin de opciones de enlace personalizado -->
+
     <!-- Agregar opción de importar CSV -->
     <div class="form-group" style="background: #f0fdf4; border: 1px dashed #10b981; border-radius: 6px; padding: 15px; margin-bottom: 15px;">
       <label for="csvInput" style="color: #059669;">Importar Mapeos desde CSV (Opcional):</label>

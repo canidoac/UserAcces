@@ -14,7 +14,8 @@ const CONFIG = {
   parameterMappings: [], // Mapeo de columnas a parámetros
   hideAfterLoad: false,
   errorMessage: "",
-  shortUrl: "", // URL acortada
+  errorUrl: "",
+  errorLinkText: "",
 }
 
 // Variables de estado
@@ -450,7 +451,8 @@ function loadConfiguration() {
       CONFIG.parameterMappings = JSON.parse(settings.parameterMappings || "[]")
       CONFIG.hideAfterLoad = settings.hideAfterLoad === "true"
       CONFIG.errorMessage = settings.errorMessage || ""
-      CONFIG.shortUrl = settings.shortUrl || "" // Cargar URL acortada
+      CONFIG.errorUrl = settings.errorUrl || "" // Cargar URL de error
+      CONFIG.errorLinkText = settings.errorLinkText || "" // Cargar texto de enlace de error
 
       log("Configuración cargada correctamente")
       log(`hideAfterLoad: ${CONFIG.hideAfterLoad}`)
@@ -538,19 +540,14 @@ function hideMessage() {
 // Mostrar error general
 // =========================
 function showError(message) {
-  // Si hay una URL acortada configurada, reemplazar URLs largas con la corta
+  // Si hay una URL de error configurada, reemplazar URLs largas con la URL de error
   let displayMessage = message
 
-  if (CONFIG.shortUrl) {
-    // Detectar URLs en el mensaje
-    const urlRegex = /(https?:\/\/[^\s]+)/g
-    const urls = message.match(urlRegex)
-
-    if (urls && urls.length > 0) {
-      // Reemplazar la primera URL larga con la URL corta
-      displayMessage = message.replace(urls[0], CONFIG.shortUrl)
-      log(`URL reemplazada: ${urls[0]} -> ${CONFIG.shortUrl}`)
-    }
+  if (CONFIG.errorUrl) {
+    // Si hay texto personalizado, usarlo; si no, usar la URL
+    const linkText = CONFIG.errorLinkText || CONFIG.errorUrl
+    // Agregar el enlace al final del mensaje
+    displayMessage = `${message}<br><br><a href="${CONFIG.errorUrl}" target="_blank" style="color: #3b82f6; text-decoration: underline; font-weight: 600;">${linkText}</a>`
   }
 
   updateStatus("Error", "Error", "error", displayMessage, isEditorMode())

@@ -260,7 +260,8 @@ function loadCurrentConfiguration() {
         hideAfterLoadCheckbox.checked = hideAfterLoadValue
 
         document.getElementById("errorMessage").value = settings.errorMessage || ""
-        document.getElementById("shortUrl").value = settings.shortUrl || ""
+        document.getElementById("errorUrl").value = settings.errorUrl || ""
+        document.getElementById("errorLinkText").value = settings.errorLinkText || ""
 
         await loadColumnsFromDataSource(settings.dataSourceName, settings.worksheetName)
 
@@ -345,7 +346,8 @@ function saveConfiguration() {
   const usernameColumn = document.getElementById("usernameColumn").value
   const hideAfterLoad = document.getElementById("hideAfterLoad").checked
   const errorMessage = document.getElementById("errorMessage").value.trim()
-  const shortUrl = document.getElementById("shortUrl").value.trim()
+  const errorUrl = document.getElementById("errorUrl").value.trim()
+  const errorLinkText = document.getElementById("errorLinkText").value.trim()
 
   console.log("[v0] === GUARDANDO CONFIGURACIÓN ===")
   console.log("[v0] Worksheet:", worksheetName)
@@ -353,7 +355,8 @@ function saveConfiguration() {
   console.log("[v0] Columna username:", usernameColumn)
   console.log("[v0] hideAfterLoad:", hideAfterLoad)
   console.log("[v0] Mensaje de error:", errorMessage)
-  console.log("[v0] URL acortada:", shortUrl)
+  console.log("[v0] URL del enlace:", errorUrl)
+  console.log("[v0] Texto del enlace:", errorLinkText)
 
   if (!worksheetName) {
     alert("Debes seleccionar un worksheet")
@@ -390,7 +393,8 @@ function saveConfiguration() {
   parentTableau.extensions.settings.set("parameterMappings", JSON.stringify(mappings))
   parentTableau.extensions.settings.set("hideAfterLoad", String(hideAfterLoad))
   parentTableau.extensions.settings.set("errorMessage", errorMessage)
-  parentTableau.extensions.settings.set("shortUrl", shortUrl)
+  parentTableau.extensions.settings.set("errorUrl", errorUrl)
+  parentTableau.extensions.settings.set("errorLinkText", errorLinkText)
   parentTableau.extensions.settings.set("configured", "true")
 
   console.log("[v0] Todas las configuraciones establecidas, guardando...")
