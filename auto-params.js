@@ -155,8 +155,6 @@ async function autoLoadParameters() {
     const firstMapping = CONFIG.parameterMappings[0]
     const firstParamValue = userData[firstMapping.columnName]
 
-    log("Valor del parámetro principal: " + firstParamValue)
-
     if (
       !firstParamValue ||
       firstParamValue === null ||
@@ -351,31 +349,17 @@ async function feedParameters(userData) {
     const dashboard = tableau.extensions.dashboardContent.dashboard
     const feedResults = []
 
-    console.log("[v0] ===== INICIO FEED PARAMETERS =====")
-    console.log("[v0] userData recibido:", userData)
-    console.log("[v0] CONFIG.parameterMappings:", CONFIG.parameterMappings)
-    console.log("[v0] Número de mapeos:", CONFIG.parameterMappings.length)
-
     log(`Alimentando ${CONFIG.parameterMappings.length} parámetros...`)
 
     for (const mapping of CONFIG.parameterMappings) {
       const paramName = mapping.parameterName
       const columnName = mapping.columnName
 
-      console.log("[v0] --------------------------------")
-      console.log("[v0] Procesando mapping:", mapping)
-      console.log("[v0] parameterName:", paramName)
-      console.log("[v0] columnName:", columnName)
-
       log(`Procesando parámetro: ${paramName} con columna: ${columnName}`)
 
       const value = userData[columnName]
 
-      console.log("[v0] Valor obtenido de userData['" + columnName + "']:", value)
-      console.log("[v0] Tipo de valor:", typeof value)
-
       if (value === undefined || value === null) {
-        console.log("[v0] ✗ Valor no encontrado o es null/undefined")
         log(`No se encontró valor para la columna: ${columnName}`, "warning")
         feedResults.push({ parameter: paramName, value: null, success: false, error: "Valor no encontrado" })
         continue
@@ -383,31 +367,19 @@ async function feedParameters(userData) {
 
       try {
         log(`Buscando parámetro en dashboard: ${paramName}`)
-        console.log("[v0] Buscando parámetro:", paramName)
 
         const parameter = await dashboard.findParameterAsync(paramName)
-
-        console.log("[v0] Parámetro encontrado:", parameter.name)
-        console.log("[v0] Valor actual del parámetro:", parameter.currentValue.value)
-        console.log("[v0] Tipo de valor actual:", parameter.currentValue.dataType)
 
         log(`Parámetro encontrado. Valor actual: ${parameter.currentValue.value}`)
         log(`Cambiando a: ${value}`)
 
         const stringValue = value.toString()
-        console.log("[v0] Valor convertido a string:", stringValue)
 
         await parameter.changeValueAsync(stringValue)
-
-        console.log("[v0] ✓ Parámetro actualizado exitosamente")
 
         log(`✓ Parámetro actualizado: ${paramName} = ${value}`, "success")
         feedResults.push({ parameter: paramName, value, success: true })
       } catch (error) {
-        console.log("[v0] ✗ Error al actualizar parámetro:", error)
-        console.log("[v0] Error.message:", error.message)
-        console.log("[v0] Error.stack:", error.stack)
-
         log(`✗ Error al actualizar parámetro ${paramName}: ${error}`, "error")
         feedResults.push({ parameter: paramName, value, success: false, error: error.message })
       }
@@ -415,12 +387,6 @@ async function feedParameters(userData) {
 
     const successCount = feedResults.filter((r) => r.success).length
     const totalCount = feedResults.length
-
-    console.log("[v0] ===== FIN FEED PARAMETERS =====")
-    console.log("[v0] Total intentados:", totalCount)
-    console.log("[v0] Exitosos:", successCount)
-    console.log("[v0] Fallidos:", totalCount - successCount)
-    console.log("[v0] Resultados detallados:", feedResults)
 
     log(`Resultado: ${successCount} de ${totalCount} parámetros actualizados exitosamente`)
 
@@ -442,7 +408,6 @@ async function feedParameters(userData) {
 
     return feedResults
   } catch (error) {
-    console.log("[v0] ERROR FATAL en feedParameters:", error)
     log("Error al alimentar parámetros: " + error, "error")
     throw error
   }
@@ -483,22 +448,17 @@ function loadConfiguration() {
   try {
     log("Cargando configuración...")
     const settings = tableau.extensions.settings.getAll()
-    log("Settings completos: " + JSON.stringify(settings))
 
     if (settings.dataSourceName) {
       CONFIG.dataSourceName = settings.dataSourceName
       CONFIG.worksheetName = settings.worksheetName || null
       CONFIG.usernameColumn = settings.usernameColumn || "username"
       CONFIG.parameterMappings = JSON.parse(settings.parameterMappings || "[]")
-
-      log("hideAfterLoad desde settings (raw): " + settings.hideAfterLoad)
-      log("hideAfterLoad tipo: " + typeof settings.hideAfterLoad)
-      CONFIG.hideAfterLoad = settings.hideAfterLoad === "true" || settings.hideAfterLoad === true
-      log("CONFIG.hideAfterLoad (procesado): " + CONFIG.hideAfterLoad)
-
+      CONFIG.hideAfterLoad = settings.hideAfterLoad === "true"
       CONFIG.errorMessage = settings.errorMessage || ""
 
-      log("Configuración cargada: " + JSON.stringify(CONFIG))
+      log("Configuración cargada correctamente")
+      log(`hideAfterLoad: ${CONFIG.hideAfterLoad}`)
       return true
     } else {
       log("No hay configuración guardada")
@@ -603,48 +563,29 @@ function addLog(message, type = "info") {
 // Mostrar éxito personalizado
 // =========================
 function showSuccess(title, subtitle, roleValue) {
-  console.log("[v0] ========== DEBUG OCULTAR EXTENSION ==========")
-  console.log("[v0] showSuccess llamado")
-  console.log("[v0] roleValue:", roleValue)
-  console.log("[v0] roleValue tipo:", typeof roleValue)
-  console.log("[v0] CONFIG.hideAfterLoad:", CONFIG.hideAfterLoad)
-  console.log("[v0] CONFIG.hideAfterLoad tipo:", typeof CONFIG.hideAfterLoad)
-  console.log("[v0] roleValue uppercase:", roleValue ? roleValue.toString().toUpperCase() : "NULL")
-  console.log("[v0] Condición 1 - CONFIG.hideAfterLoad:", CONFIG.hideAfterLoad, "=", !!CONFIG.hideAfterLoad)
-  console.log("[v0] Condición 2 - roleValue existe:", !!roleValue)
-  console.log("[v0] Condición 3 - no es NO_ROLE:", roleValue ? roleValue.toString().toUpperCase() !== "NO_ROLE" : false)
-  console.log(
-    "[v0] TODAS las condiciones:",
-    CONFIG.hideAfterLoad && roleValue && roleValue.toString().toUpperCase() !== "NO_ROLE",
-  )
-
+  // Solo verificar si debe ocultarse
   const shouldHide =
-    (CONFIG.hideAfterLoad === true || CONFIG.hideAfterLoad === "true") &&
+    CONFIG.hideAfterLoad === true &&
     roleValue &&
+    roleValue.toString().trim() !== "" &&
     roleValue.toString().toUpperCase() !== "NO_ROLE"
 
-  console.log("[v0] shouldHide final:", shouldHide)
-
   if (shouldHide) {
-    console.log("[v0] ✓ Condiciones cumplidas, ejecutando hideExtension()...")
+    log("Extensión configurada correctamente, ocultando...", "success")
     hideExtension()
     return
   }
 
-  console.log("[v0] ✗ NO se cumplen las condiciones, mostrando mensaje de éxito")
+  // Si no se oculta, mostrar mensaje de éxito
   updateStatus(`Hola ${roleValue}`, subtitle, "success", null, isEditorMode())
   log("Éxito: " + title, "success")
-}
-
-function checkIfEditorMode() {
-  return isEditorMode()
 }
 
 function hideExtension() {
   const editorMode = isEditorMode()
 
   if (editorMode) {
-    log("En modo editor, manteniendo botón de configuración visible y accesible")
+    log("En modo editor, manteniendo botón de configuración visible")
 
     // Ocultar todo el contenedor principal
     const mainContainer = document.querySelector(".container")
@@ -655,7 +596,7 @@ function hideExtension() {
       }, 50)
     }
 
-    // ASEGURAR que el botón de configuración permanezca visible y fijo
+    // Asegurar que el botón de configuración permanezca visible
     const configBtn = document.getElementById("configureBtn")
     if (configBtn) {
       configBtn.style.display = "inline-flex"
@@ -665,17 +606,14 @@ function hideExtension() {
       configBtn.style.zIndex = "99999"
       configBtn.style.opacity = "1"
       configBtn.style.visibility = "visible"
-      configBtn.onclick = configure
     }
     return
   }
 
-  // En modo de visualización, ocultar completamente
+  // En modo visualización, ocultar completamente y reducir tamaño
   document.body.style.opacity = "0"
-  document.body.style.transition = "none"
 
   setTimeout(() => {
-    document.body.classList.add("hidden")
     document.body.style.display = "block"
     document.body.style.width = "1px"
     document.body.style.height = "1px"
@@ -684,6 +622,10 @@ function hideExtension() {
     document.body.style.left = "0"
     document.body.style.overflow = "hidden"
   }, 50)
+}
+
+function checkIfEditorMode() {
+  return isEditorMode()
 }
 
 function logMessage(message, type = "info", isEditorMode = false) {
