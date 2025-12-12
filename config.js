@@ -237,8 +237,6 @@ function loadCurrentConfiguration() {
 
   console.log("[v0] === CARGANDO CONFIGURACIÓN ===")
   console.log("[v0] Settings completos:", settings)
-  console.log("[v0] hideAfterLoad desde settings:", settings.hideAfterLoad)
-  console.log("[v0] hideAfterLoad tipo:", typeof settings.hideAfterLoad)
 
   if (settings.worksheetName) {
     document.getElementById("worksheet").value = settings.worksheetName
@@ -260,10 +258,9 @@ function loadCurrentConfiguration() {
         const hideAfterLoadCheckbox = document.getElementById("hideAfterLoad")
         const hideAfterLoadValue = settings.hideAfterLoad === "true" || settings.hideAfterLoad === true
         hideAfterLoadCheckbox.checked = hideAfterLoadValue
-        console.log("[v0] hideAfterLoad checkbox establecido a:", hideAfterLoadValue)
-        console.log("[v0] hideAfterLoad checkbox.checked:", hideAfterLoadCheckbox.checked)
 
         document.getElementById("errorMessage").value = settings.errorMessage || ""
+        document.getElementById("shortUrl").value = settings.shortUrl || ""
 
         await loadColumnsFromDataSource(settings.dataSourceName, settings.worksheetName)
 
@@ -348,14 +345,15 @@ function saveConfiguration() {
   const usernameColumn = document.getElementById("usernameColumn").value
   const hideAfterLoad = document.getElementById("hideAfterLoad").checked
   const errorMessage = document.getElementById("errorMessage").value.trim()
+  const shortUrl = document.getElementById("shortUrl").value.trim()
 
   console.log("[v0] === GUARDANDO CONFIGURACIÓN ===")
   console.log("[v0] Worksheet:", worksheetName)
   console.log("[v0] Fuente de datos:", dataSourceName)
   console.log("[v0] Columna username:", usernameColumn)
-  console.log("[v0] hideAfterLoad (checkbox.checked):", hideAfterLoad)
-  console.log("[v0] hideAfterLoad tipo:", typeof hideAfterLoad)
+  console.log("[v0] hideAfterLoad:", hideAfterLoad)
   console.log("[v0] Mensaje de error:", errorMessage)
+  console.log("[v0] URL acortada:", shortUrl)
 
   if (!worksheetName) {
     alert("Debes seleccionar un worksheet")
@@ -374,15 +372,10 @@ function saveConfiguration() {
     const columnName = div.querySelector(".column-name").value
     const parameterName = div.querySelector(".parameter-name").value
 
-    console.log(`[v0] Mapeo ${idx + 1}: Columna="${columnName}", Parámetro="${parameterName}"`)
-
     if (columnName && parameterName) {
       mappings.push({ columnName, parameterName })
     }
   })
-
-  console.log("[v0] Total mapeos válidos:", mappings.length)
-  console.log("[v0] Mapeos completos:", JSON.stringify(mappings))
 
   if (mappings.length === 0) {
     alert("Debes agregar al menos un mapeo de columna a parámetro")
@@ -392,31 +385,13 @@ function saveConfiguration() {
   const parentTableau = window.parent.tableau
 
   parentTableau.extensions.settings.set("worksheetName", worksheetName)
-  console.log("[v0] ✓ worksheetName guardado")
-
   parentTableau.extensions.settings.set("dataSourceName", dataSourceName)
-  console.log("[v0] ✓ dataSourceName guardado")
-
   parentTableau.extensions.settings.set("usernameColumn", usernameColumn)
-  console.log("[v0] ✓ usernameColumn guardado")
-
-  const mappingsString = JSON.stringify(mappings)
-  parentTableau.extensions.settings.set("parameterMappings", mappingsString)
-  console.log("[v0] ✓ parameterMappings guardado:", mappingsString)
-
-  const hideAfterLoadString = String(hideAfterLoad)
-  parentTableau.extensions.settings.set("hideAfterLoad", hideAfterLoadString)
-  console.log("[v0] ✓ hideAfterLoad guardado como string:", hideAfterLoadString)
-
-  // Verificar que se guardó correctamente
-  const verificarHideAfterLoad = parentTableau.extensions.settings.get("hideAfterLoad")
-  console.log("[v0] ✓ hideAfterLoad verificado desde settings:", verificarHideAfterLoad)
-
+  parentTableau.extensions.settings.set("parameterMappings", JSON.stringify(mappings))
+  parentTableau.extensions.settings.set("hideAfterLoad", String(hideAfterLoad))
   parentTableau.extensions.settings.set("errorMessage", errorMessage)
-  console.log("[v0] ✓ errorMessage guardado")
-
+  parentTableau.extensions.settings.set("shortUrl", shortUrl)
   parentTableau.extensions.settings.set("configured", "true")
-  console.log("[v0] ✓ configured guardado")
 
   console.log("[v0] Todas las configuraciones establecidas, guardando...")
 
@@ -521,4 +496,9 @@ function copyConfigurationCSV() {
       // Fallback: mostrar en alert para copiar manualmente
       alert(`Copia esto manualmente:\n\n${csvString}`)
     })
+}
+
+function openHelp() {
+  const helpUrl = window.location.href.replace("config.html", "help.html")
+  window.open(helpUrl, "_blank", "width=900,height=700")
 }

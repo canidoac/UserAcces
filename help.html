@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Ayuda - Auto Parámetros</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 30px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #1f2937;
+      line-height: 1.6;
+    }
+    
+    .help-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 40px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    
+    h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    
+    .subtitle {
+      color: #6b7280;
+      margin-bottom: 30px;
+      font-size: 16px;
+    }
+    
+    h2 {
+      color: #374151;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      font-size: 20px;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 8px;
+    }
+    
+    h3 {
+      color: #4b5563;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    
+    p {
+      margin-bottom: 15px;
+      color: #4b5563;
+    }
+    
+    ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+    
+    li {
+      margin-bottom: 8px;
+      color: #4b5563;
+    }
+    
+    .config-option {
+      background: #f9fafb;
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+    }
+    
+    .config-option strong {
+      color: #667eea;
+      display: block;
+      margin-bottom: 5px;
+    }
+    
+    .note {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    
+    .note strong {
+      color: #92400e;
+    }
+    
+    .credits {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid #e5e7eb;
+      text-align: center;
+      color: #6b7280;
+    }
+    
+    .credits strong {
+      color: #667eea;
+      font-size: 18px;
+    }
+    
+    .credits a {
+      color: #667eea;
+      text-decoration: none;
+    }
+    
+    .credits a:hover {
+      text-decoration: underline;
+    }
+    
+    code {
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: #dc2626;
+    }
+    
+    .btn-close {
+      display: block;
+      margin: 30px auto 0;
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .btn-close:hover {
+      background: #5568d3;
+    }
+  </style>
+</head>
+<body>
+  <div class="help-container">
+    <h1>📚 Auto Parámetros - Guía de Configuración</h1>
+    <p class="subtitle">Aprende cómo configurar y utilizar la extensión de Auto Parámetros para Tableau</p>
+    
+    <h2>¿Qué hace esta extensión?</h2>
+    <p>
+      Auto Parámetros permite cargar automáticamente valores en los parámetros de Tableau basándose en el usuario actual.
+      La extensión lee datos de una fuente de datos (normalmente un Hyper) y configura múltiples parámetros simultáneamente.
+    </p>
+    
+    <h2>Configuración Paso a Paso</h2>
+    
+    <div class="config-option">
+      <strong>1. Worksheet (Hoja) de Datos</strong>
+      <p>Selecciona la hoja de Tableau que contiene la fuente de datos con la información de usuarios.</p>
+      <p><em>Ejemplo:</em> Si tienes una hoja llamada "Usuarios Config", selecciónala aquí.</p>
+    </div>
+    
+    <div class="config-option">
+      <strong>2. Fuente de Datos de Usuarios</strong>
+      <p>Una vez seleccionada la hoja, elige la fuente de datos específica (Hyper) que contiene los datos de usuarios.</p>
+      <p><em>Ejemplo:</em> <code>HYPER_CONECTIVIDAD</code> o <code>usuarios.hyper</code></p>
+    </div>
+    
+    <div class="config-option">
+      <strong>3. Columna de Username</strong>
+      <p>Selecciona la columna que identifica al usuario actual. Normalmente es el campo de email.</p>
+      <p><em>Ejemplo:</em> <code>EMAIL</code> o <code>USERNAME</code></p>
+    </div>
+    
+    <div class="config-option">
+      <strong>4. Ocultar extensión después de cargar</strong>
+      <p>
+        Si activas esta opción, la extensión se ocultará automáticamente una vez que los parámetros se carguen exitosamente.
+        Esto mejora la experiencia del usuario final al no mostrar la interfaz de carga después de completarse.
+      </p>
+      <p><strong>Nota:</strong> En modo editor, siempre podrás acceder a la configuración desde el menú de la extensión.</p>
+    </div>
+    
+    <div class="config-option">
+      <strong>5. Mensaje de error personalizado</strong>
+      <p>
+        Define el mensaje que verán los usuarios cuando no se encuentren sus datos o no tengan un rol asignado.
+        Puedes incluir URLs que se convertirán automáticamente en enlaces clickeables.
+      </p>
+      <p><em>Ejemplo:</em> "No se encontró tu usuario. Por favor contacta a soporte en https://miempresa.com/soporte"</p>
+    </div>
+    
+    <div class="config-option">
+      <strong>6. URL acortada (opcional)</strong>
+      <p>
+        Si tu mensaje de error incluye una URL larga, puedes usar un acortador de enlaces (como bit.ly o tinyurl.com)
+        y colocar aquí la URL corta. Esta URL se mostrará en el mensaje de error en lugar de la URL original.
+      </p>
+      <p><em>Ejemplo:</em> <code>https://bit.ly/soporte-tableau</code></p>
+    </div>
+    
+    <h2>Mapeo de Parámetros</h2>
+    <p>
+      El mapeo conecta las columnas de tu fuente de datos con los parámetros de Tableau:
+    </p>
+    
+    <div class="config-option">
+      <strong>Columna de Datos</strong>
+      <p>La columna en tu fuente de datos que contiene el valor (Ej: <code>ROL</code>, <code>REGION</code>)</p>
+    </div>
+    
+    <div class="config-option">
+      <strong>Parámetro de Tableau</strong>
+      <p>El parámetro de Tableau que recibirá el valor (Ej: <code>RolParametro</code>, <code>RegionParametro</code>)</p>
+    </div>
+    
+    <div class="note">
+      <strong>💡 Consejo:</strong> Puedes agregar múltiples mapeos para configurar varios parámetros a la vez.
+      Usa el botón "+ Agregar Mapeo" para añadir más conexiones.
+    </div>
+    
+    <h2>Importar/Exportar Configuración</h2>
+    
+    <h3>Importar desde CSV</h3>
+    <p>
+      Puedes importar múltiples mapeos de una sola vez usando formato CSV:
+    </p>
+    <p><code>EMAIL,Usuario,ROL,RolParametro,REGION,RegionParametro</code></p>
+    <p>El formato es: Columna1,Parametro1,Columna2,Parametro2,...</p>
+    
+    <h3>Exportar como CSV</h3>
+    <p>
+      Usa el botón "📋 Copiar Configuración como CSV" para copiar tu configuración actual al portapapeles.
+      Esto es útil para respaldar o compartir tu configuración con otros dashboards.
+    </p>
+    
+    <h2>Modo Editor vs Modo Visualización</h2>
+    <ul>
+      <li><strong>Modo Editor:</strong> La extensión muestra logs detallados y siempre permite acceder a la configuración</li>
+      <li><strong>Modo Visualización:</strong> La extensión muestra solo mensajes esenciales al usuario final</li>
+    </ul>
+    
+    <h2>Solución de Problemas</h2>
+    
+    <h3>La extensión no carga mis parámetros</h3>
+    <ul>
+      <li>Verifica que la fuente de datos esté correctamente conectada en el worksheet seleccionado</li>
+      <li>Confirma que los nombres de las columnas y parámetros sean exactos (distinguen mayúsculas/minúsculas)</li>
+      <li>Revisa los logs en modo editor para ver mensajes de error específicos</li>
+    </ul>
+    
+    <h3>La extensión no se oculta después de cargar</h3>
+    <ul>
+      <li>Verifica que la opción "Ocultar extensión después de cargar" esté marcada</li>
+      <li>Asegúrate de que el usuario tenga un rol válido (no NULL o vacío)</li>
+      <li>Abre la consola del navegador (F12) para ver los logs detallados</li>
+    </ul>
+    
+    <h3>Mensaje "No se encontró el Worksheet"</h3>
+    <ul>
+      <li>Verifica que el worksheet seleccionado aún exista en el dashboard</li>
+      <li>Si renombraste el worksheet, actualiza la configuración</li>
+    </ul>
+    
+    <div class="credits">
+      <p><strong>Extensión creada por</strong></p>
+      <p>Andrés Canido</p>
+      <p><a href="mailto:andres.canido@mercadolibre.com">andres.canido@mercadolibre.com</a></p>
+      <p style="margin-top: 10px; font-size: 14px; color: #9ca3af;">
+        © 2025 - Auto Parámetros para Tableau
+      </p>
+    </div>
+    
+    <button class="btn-close" onclick="window.close()">Cerrar Ayuda</button>
+  </div>
+</body>
+</html>

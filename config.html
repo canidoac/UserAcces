@@ -155,10 +155,24 @@
         type="text" 
         id="errorMessage" 
         placeholder="Ej: No se encontraron datos para tu usuario. Contacta a soporte."
-        maxlength="150"
+        maxlength="200"
       >
       <p style="color: #6b7280; font-size: 12px; margin-top: 5px;">
-        Este mensaje se mostrará si no se encuentra el usuario en la fuente de datos
+        Este mensaje se mostrará si no se encuentra el usuario en la fuente de datos. Puedes incluir URLs.
+      </p>
+    </div>
+    
+    <!-- Agregando campo para URL acortada -->
+    <div class="form-group">
+      <label for="shortUrl">URL acortada (opcional):</label>
+      <input 
+        type="text" 
+        id="shortUrl" 
+        placeholder="Ej: https://bit.ly/soporte-tickets"
+        maxlength="100"
+      >
+      <p style="color: #6b7280; font-size: 12px; margin-top: 5px;">
+        Si incluiste una URL larga en el mensaje de error, coloca aquí la versión acortada para mejor legibilidad
       </p>
     </div>
     <!-- Fin de opciones adicionales -->
@@ -192,6 +206,17 @@
       </button>
     </div>
     <!-- Fin de botón de copiar -->
+    
+    <!-- Agregando botón de ayuda -->
+    <div style="text-align: center; margin-bottom: 20px;">
+      <button 
+        onclick="openHelp()" 
+        style="background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;"
+      >
+        📚 Ver Guía de Ayuda
+      </button>
+    </div>
+    <!-- Fin de botón de ayuda -->
     
     <h3 style="margin: 20px 0 10px; color: #1f2937; font-size: 16px;">Mapeo de Parámetros</h3>
     <p style="color: #6b7280; font-size: 13px; margin-bottom: 15px;">

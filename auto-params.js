@@ -14,6 +14,7 @@ const CONFIG = {
   parameterMappings: [], // Mapeo de columnas a parámetros
   hideAfterLoad: false,
   errorMessage: "",
+  shortUrl: "", // URL acortada
 }
 
 // Variables de estado
@@ -449,6 +450,7 @@ function loadConfiguration() {
       CONFIG.parameterMappings = JSON.parse(settings.parameterMappings || "[]")
       CONFIG.hideAfterLoad = settings.hideAfterLoad === "true"
       CONFIG.errorMessage = settings.errorMessage || ""
+      CONFIG.shortUrl = settings.shortUrl || "" // Cargar URL acortada
 
       log("Configuración cargada correctamente")
       log(`hideAfterLoad: ${CONFIG.hideAfterLoad}`)
@@ -536,7 +538,22 @@ function hideMessage() {
 // Mostrar error general
 // =========================
 function showError(message) {
-  updateStatus("Error", "Error", "error", message, isEditorMode())
+  // Si hay una URL acortada configurada, reemplazar URLs largas con la corta
+  let displayMessage = message
+
+  if (CONFIG.shortUrl) {
+    // Detectar URLs en el mensaje
+    const urlRegex = /(https?:\/\/[^\s]+)/g
+    const urls = message.match(urlRegex)
+
+    if (urls && urls.length > 0) {
+      // Reemplazar la primera URL larga con la URL corta
+      displayMessage = message.replace(urls[0], CONFIG.shortUrl)
+      log(`URL reemplazada: ${urls[0]} -> ${CONFIG.shortUrl}`)
+    }
+  }
+
+  updateStatus("Error", "Error", "error", displayMessage, isEditorMode())
 }
 
 // =========================
