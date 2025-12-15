@@ -66,16 +66,22 @@ async function sendTracking(userEmail, status) {
       return
     }
 
-    let finalEmail = userEmail
-    if (!finalEmail || finalEmail === "Desconocido") {
-      try {
-        // Intentar obtener el usuario de Tableau Server/Online
-        finalEmail = tableau.extensions.environment.userName || "Desconocido"
+    // Siempre intentar obtener el usuario de Tableau primero
+    let finalEmail = "Desconocido"
+    try {
+      const tableauUser = tableau.extensions.environment.userName
+      if (tableauUser && tableauUser.trim() !== "") {
+        finalEmail = tableauUser
         console.log("[v0] Usando userName de Tableau API:", finalEmail)
-      } catch (e) {
-        console.log("[v0] No se pudo obtener userName de Tableau:", e.message)
-        finalEmail = "Desconocido"
       }
+    } catch (e) {
+      console.log("[v0] No se pudo obtener userName de Tableau:", e.message)
+    }
+
+    // Si no se obtuvo de Tableau, usar el email pasado como parámetro
+    if (finalEmail === "Desconocido" && userEmail && userEmail !== "Desconocido") {
+      finalEmail = userEmail
+      console.log("[v0] Usando email de userData:", finalEmail)
     }
 
     // Usar el nombre del dashboard configurado, o intentar obtenerlo de Tableau

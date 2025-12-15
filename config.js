@@ -258,23 +258,39 @@ function loadCurrentConfiguration() {
     const event = new Event("change")
     worksheetSelect.dispatchEvent(event)
 
+    const savedUsernameColumn = settings.usernameColumn || ""
+    const savedDataSourceName = settings.dataSourceName || ""
+    const savedHideAfterLoad = settings.hideAfterLoad === "true" || settings.hideAfterLoad === true
+    const savedErrorMessage = settings.errorMessage || ""
+    const savedErrorUrl = settings.errorUrl || ""
+    const savedErrorLinkText = settings.errorLinkText || ""
+    const savedTrackingUrl = settings.trackingUrl || ""
+
     setTimeout(async () => {
-      if (settings.dataSourceName) {
-        document.getElementById("dataSource").value = settings.dataSourceName
-        document.getElementById("usernameColumn").value = settings.usernameColumn || "username"
+      if (savedDataSourceName) {
+        document.getElementById("dataSource").value = savedDataSourceName
 
-        const hideAfterLoadCheckbox = document.getElementById("hideAfterLoad")
-        const hideAfterLoadValue = settings.hideAfterLoad === "true" || settings.hideAfterLoad === true
-        hideAfterLoadCheckbox.checked = hideAfterLoadValue
-
-        document.getElementById("errorMessage").value = settings.errorMessage || ""
-        document.getElementById("errorUrl").value = settings.errorUrl || ""
-        document.getElementById("errorLinkText").value = settings.errorLinkText || ""
-        document.getElementById("trackingUrl").value = settings.trackingUrl || ""
-
-        await loadColumnsFromDataSource(settings.dataSourceName, settings.worksheetName)
+        // Cargar las columnas primero
+        await loadColumnsFromDataSource(savedDataSourceName, settings.worksheetName)
 
         setTimeout(() => {
+          // Restaurar la columna de username
+          const usernameSelect = document.getElementById("usernameColumn")
+          if (savedUsernameColumn) {
+            usernameSelect.value = savedUsernameColumn
+            console.log("[v0] Columna username restaurada:", savedUsernameColumn)
+          }
+
+          // Restaurar checkbox
+          document.getElementById("hideAfterLoad").checked = savedHideAfterLoad
+
+          // Restaurar campos de error
+          document.getElementById("errorMessage").value = savedErrorMessage
+          document.getElementById("errorUrl").value = savedErrorUrl
+          document.getElementById("errorLinkText").value = savedErrorLinkText
+          document.getElementById("trackingUrl").value = savedTrackingUrl
+
+          // Renderizar mapeos
           const container = document.getElementById("mappingsContainer")
           container.innerHTML = ""
 
