@@ -599,24 +599,22 @@ function hideExtension() {
   document.body.classList.remove("visible")
   document.body.classList.add("hidden")
 
-  document.body.style.pointerEvents = "none"
-  document.documentElement.style.pointerEvents = "none"
+  if (tableau && tableau.extensions && tableau.extensions.setClickThroughAsync) {
+    tableau.extensions
+      .setClickThroughAsync(true)
+      .then(() => {
+        log("Click-through habilitado correctamente")
+      })
+      .catch((error) => {
+        log("Error al habilitar click-through: " + error.message)
+      })
+  }
 
   const mainContainer = document.getElementById("mainContainer")
   if (mainContainer) {
     mainContainer.style.opacity = "0"
     mainContainer.style.visibility = "hidden"
-    mainContainer.style.pointerEvents = "none"
     mainContainer.style.display = "none"
-  }
-
-  try {
-    if (window.frameElement) {
-      window.frameElement.style.pointerEvents = "none"
-      log("Iframe de extensión deshabilitado para interacción")
-    }
-  } catch (e) {
-    log("No se pudo acceder al frameElement: " + e.message)
   }
 
   const configButton = document.getElementById("configureBtn")
