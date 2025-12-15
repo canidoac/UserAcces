@@ -76,30 +76,19 @@ async function sendErrorTracking(status = "Sin Acceso") {
       Status: status,
     }
 
-    console.log("[v0] Enviando tracking:", JSON.stringify(trackingData))
+    console.log("[v0] Enviando tracking via Image beacon:", JSON.stringify(trackingData))
 
-    // Intentar primero con fetch normal
-    try {
-      const response = await fetch(TRACKING_URL, {
-        method: "POST",
-        mode: "no-cors", // Evita problemas de CORS
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8",
-        },
-        body: JSON.stringify(trackingData),
-      })
-      console.log("[v0] Tracking enviado (no-cors mode)")
-    } catch (fetchError) {
-      console.log("[v0] Fetch falló, intentando con Image beacon...")
-      // Fallback: usar Image beacon si fetch falla
-      const params = new URLSearchParams(trackingData)
-      const img = new Image()
-      img.src = `${TRACKING_URL}?${params.toString()}`
-    }
+    // Usar Image beacon - no tiene restricciones de CORS
+    const params = new URLSearchParams(trackingData)
+    const img = new Image()
+    img.onload = () => console.log("[v0] Tracking enviado exitosamente")
+    img.onerror = () => console.log("[v0] Error al enviar tracking (puede ser normal con Apps Script)")
+    img.src = `${TRACKING_URL}?${params.toString()}`
   } catch (error) {
     console.log("[v0] Error en tracking:", error)
   }
 }
+// </CHANGE>
 
 // Inicializar extensión
 log("Iniciando inicialización de extensión...")
