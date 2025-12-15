@@ -596,31 +596,24 @@ function hideExtension() {
 
   document.body.style.opacity = "0"
   document.body.style.pointerEvents = "none"
-  document.body.style.width = "10px"
-  document.body.style.height = "10px"
 
-  // Intentar mover el contenedor padre de Tableau si es accesible
-  const container = document.querySelector(".dashboard-extension-container") || window.frameElement?.parentElement
-
-  if (container) {
-    container.style.opacity = "0"
-    container.style.pointerEvents = "none"
-    log("Contenedor de extensión oculto y deshabilitado")
-  }
-
-  // En modo editor, mantener botón de configuración visible y clickeable
-  if (editorMode) {
-    const configBtn = document.getElementById("configureBtn")
-    if (configBtn) {
-      configBtn.style.opacity = "1"
-      configBtn.style.visibility = "visible"
-      configBtn.style.pointerEvents = "auto"
-      configBtn.style.zIndex = "10000"
-      log("Botón de configuración mantenido visible en modo editor")
+  // Intentar acceder al iframe de la extensión de Tableau para deshabilitarlo
+  try {
+    if (window.frameElement) {
+      window.frameElement.style.pointerEvents = "none"
+      log("Iframe de extensión deshabilitado para interacción")
     }
+  } catch (e) {
+    log("No se pudo acceder al frameElement: " + e.message)
   }
 
-  log("Extensión oculta completamente - no bloqueará interacción con el dashboard")
+  // Mantener el botón de configuración accesible en modo editor
+  const configButton = document.getElementById("configureBtn")
+  if (configButton && editorMode) {
+    configButton.style.opacity = "1"
+    configButton.style.pointerEvents = "auto"
+    log("Botón de configuración mantenido visible en modo editor")
+  }
 }
 
 // =========================
