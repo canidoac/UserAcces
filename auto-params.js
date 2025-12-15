@@ -66,33 +66,32 @@ async function sendTracking(userEmail, status) {
       return
     }
 
-    console.log("[v0] ====== DEBUG TRACKING ======")
-    console.log("[v0] tableau.extensions.environment:", JSON.stringify(tableau.extensions.environment))
-    console.log("[v0] userName directo:", tableau.extensions.environment.userName)
-    console.log("[v0] userEmail recibido:", userEmail)
-
-    // Siempre intentar obtener el usuario de Tableau primero
     let finalEmail = "Desconocido"
 
-    const tableauUser = tableau.extensions.environment.userName
-    const tableauUserFull = tableau.extensions.environment.userDisplayName // Alternativa
-
-    console.log("[v0] tableauUser:", tableauUser)
-    console.log("[v0] tableauUserFull:", tableauUserFull)
-
-    if (tableauUser && tableauUser.trim() !== "") {
-      finalEmail = tableauUser
-      console.log("[v0] Usando userName:", finalEmail)
-    } else if (tableauUserFull && tableauUserFull.trim() !== "") {
-      finalEmail = tableauUserFull
-      console.log("[v0] Usando userDisplayName:", finalEmail)
-    } else if (userEmail && userEmail !== "Desconocido" && userEmail.trim() !== "") {
+    // 1. Primero intentar con el userEmail que viene del userData
+    if (userEmail && userEmail !== "Desconocido" && userEmail.trim() !== "") {
       finalEmail = userEmail
-      console.log("[v0] Usando userEmail del parámetro:", finalEmail)
     }
-
-    console.log("[v0] finalEmail final:", finalEmail)
-    console.log("[v0] ============================")
+    // 2. Intentar userName de Tableau (Tableau Server)
+    else if (tableau.extensions.environment.userName && tableau.extensions.environment.userName.trim() !== "") {
+      finalEmail = tableau.extensions.environment.userName
+    }
+    // 3. Intentar userDisplayName de Tableau
+    else if (
+      tableau.extensions.environment.userDisplayName &&
+      tableau.extensions.environment.userDisplayName.trim() !== ""
+    ) {
+      finalEmail = tableau.extensions.environment.userDisplayName
+    }
+    // 4. Usar _uniqueUserId de Tableau Cloud (siempre disponible en Cloud)
+    else {
+      const env = tableau.extensions.environment
+      // Acceder a propiedades privadas de Tableau Cloud
+      const uniqueId = env._uniqueUserId || env["_uniqueUserId"]
+      if (uniqueId) {
+        finalEmail = `user_${uniqueId.substring(0, 12)}` // Usar los primeros 12 caracteres
+      }
+    }
 
     // Usar el nombre del dashboard configurado, o intentar obtenerlo de Tableau
     let dashboardName = CONFIG.dashboardName || "Dashboard Desconocido"
@@ -116,7 +115,7 @@ async function sendTracking(userEmail, status) {
     const img = new Image()
     img.src = `${CONFIG.trackingUrl}?${params}`
 
-    console.log("[v0] Tracking enviado via Image beacon a:", CONFIG.trackingUrl)
+    console.log("[v0] Tracking enviado via Image beacon")
   } catch (error) {
     console.error("[v0] Error enviando tracking:", error)
   }
