@@ -599,11 +599,15 @@ function hideExtension() {
   document.body.classList.remove("visible")
   document.body.classList.add("hidden")
 
+  document.body.style.pointerEvents = "none"
+  document.documentElement.style.pointerEvents = "none"
+
   const mainContainer = document.getElementById("mainContainer")
   if (mainContainer) {
     mainContainer.style.opacity = "0"
     mainContainer.style.visibility = "hidden"
     mainContainer.style.pointerEvents = "none"
+    mainContainer.style.display = "none"
   }
 
   try {
@@ -617,7 +621,7 @@ function hideExtension() {
 
   const configButton = document.getElementById("configureBtn")
   if (configButton && editorMode) {
-    configButton.style.display = "inline-flex"
+    configButton.style.display = "flex"
     configButton.style.opacity = "1"
     configButton.style.pointerEvents = "auto"
     configButton.style.visibility = "visible"

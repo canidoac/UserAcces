@@ -160,20 +160,19 @@
       color: #2563eb;
     }
     
+    /* Botón de configurar más pequeño, solo ícono */
     .btn-configure {
       background: #3b82f6;
       color: white;
       border: none;
-      border-radius: 10px;
-      padding: 12px 28px;
-      font-size: 14px;
-      font-weight: 600;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      font-size: 24px;
       cursor: pointer;
-      margin-top: 20px;
-      transition: all 0.2s ease;
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: center;
       position: fixed;
       top: 10px;
       right: 10px;
@@ -182,16 +181,17 @@
       pointer-events: auto !important;
       opacity: 1 !important;
       visibility: visible !important;
+      transition: all 0.2s ease;
     }
     
     .btn-configure:hover {
       background: #2563eb;
-      transform: translateY(-2px);
+      transform: scale(1.1);
       box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
     
     .btn-configure:active {
-      transform: translateY(0);
+      transform: scale(1);
     }
     
     .log-container {
@@ -239,10 +239,9 @@
     <div class="log-container" id="logContainer" style="display: none;"></div>
   </div>
   
-  <!-- Botón de configurar fuera del contenedor para que siempre sea visible -->
-  <button class="btn-configure" id="configureBtn" style="display: none;">
-    <span>⚙</span>
-    <span>Configurar</span>
+  <!-- Botón de configurar solo con ícono, sin texto -->
+  <button class="btn-configure" id="configureBtn" style="display: none;" title="Configurar extensión">
+    ⚙
   </button>
 
   <script src="auto-params.js"></script>
