@@ -17,20 +17,27 @@
     
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: linear-gradient(135deg, #a8d8f0 0%, #d4e7f5 100%);
+      /* Fondo transparente por defecto */
+      background: transparent;
       width: 100%;
       height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.3s ease, background 0.3s ease;
+    }
+    
+    /* Fondo celeste solo cuando está visible */
+    body.visible {
+      background: linear-gradient(135deg, #a8d8f0 0%, #d4e7f5 100%);
     }
     
     /* Clase para ocultar y deshabilitar interacción sin mover */
     body.hidden {
       opacity: 0 !important;
       pointer-events: none !important;
+      background: transparent !important;
     }
     
     .container {

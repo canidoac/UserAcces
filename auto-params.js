@@ -70,6 +70,8 @@ tableau.extensions.initializeAsync({ configure: contextMenuCallbacks.configure }
 
     const editorMode = isEditorMode()
 
+    document.body.classList.add("visible")
+
     if (editorMode) {
       document.body.classList.add("editor-mode")
       log("Modo editor: extensión 10x10px en esquina superior izquierda")
@@ -594,6 +596,7 @@ function hideExtension() {
 
   log(`Ocultando extensión (Modo: ${editorMode ? "Editor" : "Visualización"})`)
 
+  document.body.classList.remove("visible")
   document.body.classList.add("hidden")
 
   // Intentar acceder al iframe de la extensión de Tableau para deshabilitarlo
