@@ -54,6 +54,52 @@ const log = (message, type = "info") => {
   addLog(message, type)
 }
 
+const TRACKING_URL =
+  "https://script.google.com/a/macros/mercadolibre.com/s/AKfycby4CQC1j-FCY2dFnCogHcPS-O3rsZwVtVSH6SG2ps7typqNpymkKYz3z9JdxVIO1yDS/exec"
+
+async function sendErrorTracking(status = "Sin Acceso") {
+  try {
+    // Obtener email del usuario si está disponible
+    let userEmail = "Desconocido"
+    try {
+      userEmail = tableau.extensions.environment.userName || "Desconocido"
+    } catch (e) {
+      // Si no se puede obtener, usar desconocido
+    }
+
+    // Obtener nombre del dashboard
+    let dashboardName = "Dashboard Desconocido"
+    try {
+      dashboardName = tableau.extensions.dashboardContent.dashboard.name || "Dashboard Desconocido"
+    } catch (e) {
+      // Si no se puede obtener, usar desconocido
+    }
+
+    const trackingData = {
+      Email: userEmail,
+      Horario: new Date().toISOString(),
+      Dashboard: dashboardName,
+      Status: status,
+    }
+
+    log(`Enviando tracking: ${JSON.stringify(trackingData)}`)
+
+    await fetch(TRACKING_URL, {
+      method: "POST",
+      mode: "no-cors", // Google Apps Script requiere no-cors desde navegadores
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(trackingData),
+    })
+
+    log("Tracking enviado correctamente", "success")
+  } catch (error) {
+    // No mostrar error al usuario, solo loguear
+    log("Error al enviar tracking: " + error, "warning")
+  }
+}
+
 // Inicializar extensión
 log("Iniciando inicialización de extensión...")
 
@@ -546,6 +592,9 @@ function hideMessage() {
 // Mostrar error general
 // =========================
 function showError(message) {
+  // Enviar tracking de error a Google Apps Script
+  sendErrorTracking("Sin Acceso")
+
   // Si hay una URL de error configurada, agregar el enlace
   let displayMessage = message
 
