@@ -242,6 +242,10 @@ function loadCurrentConfiguration() {
     document.getElementById("dashboardName").value = settings.dashboardName
   }
 
+  if (settings.trackingUrl) {
+    document.getElementById("trackingUrl").value = settings.trackingUrl
+  }
+
   if (settings.worksheetName) {
     document.getElementById("worksheet").value = settings.worksheetName
 
@@ -266,6 +270,7 @@ function loadCurrentConfiguration() {
         document.getElementById("errorMessage").value = settings.errorMessage || ""
         document.getElementById("errorUrl").value = settings.errorUrl || ""
         document.getElementById("errorLinkText").value = settings.errorLinkText || ""
+        document.getElementById("trackingUrl").value = settings.trackingUrl || ""
 
         await loadColumnsFromDataSource(settings.dataSourceName, settings.worksheetName)
 
@@ -353,6 +358,7 @@ function saveConfiguration() {
   const errorMessage = document.getElementById("errorMessage").value.trim()
   const errorUrl = document.getElementById("errorUrl").value.trim()
   const errorLinkText = document.getElementById("errorLinkText").value.trim()
+  const trackingUrl = document.getElementById("trackingUrl").value.trim()
 
   console.log("[v0] === GUARDANDO CONFIGURACIÓN ===")
   console.log("[v0] Dashboard Name:", dashboardName)
@@ -363,6 +369,7 @@ function saveConfiguration() {
   console.log("[v0] Mensaje de error:", errorMessage)
   console.log("[v0] URL del enlace:", errorUrl)
   console.log("[v0] Texto del enlace:", errorLinkText)
+  console.log("[v0] URL tracking:", trackingUrl)
 
   if (!worksheetName) {
     alert("Debes seleccionar un worksheet")
@@ -402,6 +409,7 @@ function saveConfiguration() {
   parentTableau.extensions.settings.set("errorMessage", errorMessage)
   parentTableau.extensions.settings.set("errorUrl", errorUrl)
   parentTableau.extensions.settings.set("errorLinkText", errorLinkText)
+  parentTableau.extensions.settings.set("trackingUrl", trackingUrl)
   parentTableau.extensions.settings.set("configured", "true")
 
   console.log("[v0] Todas las configuraciones establecidas, guardando...")

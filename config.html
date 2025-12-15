@@ -205,6 +205,23 @@
     </div>
     <!-- Fin de opciones de enlace personalizado -->
 
+    <!-- Agregando campo para URL del script de tracking -->
+    <div class="form-group" style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 15px; margin-bottom: 15px;">
+      <label for="trackingUrl" style="color: #92400e; font-weight: 600;">
+        URL del Script de Tracking (Google Apps Script):
+      </label>
+      <input 
+        type="text" 
+        id="trackingUrl" 
+        placeholder="https://script.google.com/macros/s/xxxxxxx/exec"
+        style="font-family: monospace; font-size: 12px;"
+      >
+      <p style="color: #92400e; font-size: 12px; margin-top: 5px;">
+        URL de tu Google Apps Script para registrar accesos. Deja vacío para desactivar el tracking.
+      </p>
+    </div>
+    <!-- Fin campo URL tracking -->
+
     <!-- Agregar opción de importar CSV -->
     <div class="form-group" style="background: #f0fdf4; border: 1px dashed #10b981; border-radius: 6px; padding: 15px; margin-bottom: 15px;">
       <label for="csvInput" style="color: #059669;">Importar Mapeos desde CSV (Opcional):</label>

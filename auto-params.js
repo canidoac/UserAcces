@@ -17,6 +17,7 @@ const CONFIG = {
   errorUrl: "",
   errorLinkText: "",
   dashboardName: "", // Agregar dashboardName al CONFIG
+  trackingUrl: "", // URL del script de tracking configurable
 }
 
 // Variables de estado
@@ -57,11 +58,26 @@ const log = (message, type = "info") => {
   addLog(message, type)
 }
 
-const TRACKING_URL =
-  "https://script.google.com/a/macros/mercadolibre.com/s/AKfycby4CQC1j-FCY2dFnCogHcPS-O3rsZwVtVSH6SG2ps7typqNpymkKYz3z9JdxVIO1yDS/exec"
-
 async function sendTracking(userEmail, status) {
   try {
+    // Si no hay URL de tracking configurada, no enviar nada
+    if (!CONFIG.trackingUrl) {
+      console.log("[v0] Tracking desactivado: No hay URL configurada")
+      return
+    }
+
+    let finalEmail = userEmail
+    if (!finalEmail || finalEmail === "Desconocido") {
+      try {
+        // Intentar obtener el usuario de Tableau Server/Online
+        finalEmail = tableau.extensions.environment.userName || "Desconocido"
+        console.log("[v0] Usando userName de Tableau API:", finalEmail)
+      } catch (e) {
+        console.log("[v0] No se pudo obtener userName de Tableau:", e.message)
+        finalEmail = "Desconocido"
+      }
+    }
+
     // Usar el nombre del dashboard configurado, o intentar obtenerlo de Tableau
     let dashboardName = CONFIG.dashboardName || "Dashboard Desconocido"
     if (!CONFIG.dashboardName) {
@@ -71,7 +87,7 @@ async function sendTracking(userEmail, status) {
     }
 
     const trackingData = {
-      Email: userEmail || "Desconocido",
+      Email: finalEmail,
       Horario: new Date().toISOString(),
       Dashboard: dashboardName,
       Status: status,
@@ -82,9 +98,9 @@ async function sendTracking(userEmail, status) {
     // Usar Image beacon para evitar CORS
     const params = new URLSearchParams(trackingData).toString()
     const img = new Image()
-    img.src = `${TRACKING_URL}?${params}`
+    img.src = `${CONFIG.trackingUrl}?${params}`
 
-    console.log("[v0] Tracking enviado via Image beacon")
+    console.log("[v0] Tracking enviado via Image beacon a:", CONFIG.trackingUrl)
   } catch (error) {
     console.error("[v0] Error enviando tracking:", error)
   }
@@ -509,10 +525,12 @@ function loadConfiguration() {
       CONFIG.errorUrl = settings.errorUrl || ""
       CONFIG.errorLinkText = settings.errorLinkText || ""
       CONFIG.dashboardName = settings.dashboardName || "" // Cargar dashboardName
+      CONFIG.trackingUrl = settings.trackingUrl || "" // Cargar trackingUrl
 
       log("Configuración cargada correctamente")
       log("hideAfterLoad: " + CONFIG.hideAfterLoad)
       log("dashboardName: " + CONFIG.dashboardName)
+      log("trackingUrl: " + CONFIG.trackingUrl)
       return true
     } else {
       log("No hay configuración guardada")
