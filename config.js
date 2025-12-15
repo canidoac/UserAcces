@@ -238,6 +238,10 @@ function loadCurrentConfiguration() {
   console.log("[v0] === CARGANDO CONFIGURACIÓN ===")
   console.log("[v0] Settings completos:", settings)
 
+  if (settings.dashboardName) {
+    document.getElementById("dashboardName").value = settings.dashboardName
+  }
+
   if (settings.worksheetName) {
     document.getElementById("worksheet").value = settings.worksheetName
 
@@ -341,6 +345,7 @@ function removeMapping(button) {
 }
 
 function saveConfiguration() {
+  const dashboardName = document.getElementById("dashboardName").value.trim()
   const worksheetName = document.getElementById("worksheet").value
   const dataSourceName = document.getElementById("dataSource").value
   const usernameColumn = document.getElementById("usernameColumn").value
@@ -350,6 +355,7 @@ function saveConfiguration() {
   const errorLinkText = document.getElementById("errorLinkText").value.trim()
 
   console.log("[v0] === GUARDANDO CONFIGURACIÓN ===")
+  console.log("[v0] Dashboard Name:", dashboardName)
   console.log("[v0] Worksheet:", worksheetName)
   console.log("[v0] Fuente de datos:", dataSourceName)
   console.log("[v0] Columna username:", usernameColumn)
@@ -387,6 +393,7 @@ function saveConfiguration() {
 
   const parentTableau = window.parent.tableau
 
+  parentTableau.extensions.settings.set("dashboardName", dashboardName)
   parentTableau.extensions.settings.set("worksheetName", worksheetName)
   parentTableau.extensions.settings.set("dataSourceName", dataSourceName)
   parentTableau.extensions.settings.set("usernameColumn", usernameColumn)

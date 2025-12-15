@@ -113,6 +113,21 @@
   <div class="config-container">
     <h2>Configuración de Auto Parámetros</h2>
     
+    <!-- Agregando campo para nombre del dashboard -->
+    <div class="form-group">
+      <label for="dashboardName">Nombre del Dashboard (para tracking):</label>
+      <input 
+        type="text" 
+        id="dashboardName" 
+        placeholder="Ej: Dashboard de Ventas, Reporte Financiero"
+        maxlength="100"
+      >
+      <p style="color: #6b7280; font-size: 12px; margin-top: 5px;">
+        Este nombre se usará para identificar el dashboard en los logs de acceso
+      </p>
+    </div>
+    <!-- Fin campo nombre dashboard -->
+    
     <!-- Agregando selección de worksheet primero -->
     <div class="form-group">
       <label for="worksheet">Worksheet (Hoja) de Datos:</label>

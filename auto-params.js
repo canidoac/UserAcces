@@ -8,19 +8,22 @@ const TEST_EMAIL = "andres.canido@mercadolibre.com"
 
 // Configuración de la extensión
 const CONFIG = {
-  dataSourceName: null, // Nombre de la fuente de datos (se configura después)
-  worksheetName: null, // Nombre del worksheet que contiene los datos
-  usernameColumn: "EMAIL", // Columna que contiene el username
+  dataSourceName: "", // Nombre de la fuente de datos (se configura después)
+  worksheetName: "", // Nombre del worksheet que contiene los datos
+  usernameColumn: "", // Columna que contiene el username
   parameterMappings: [], // Mapeo de columnas a parámetros
   hideAfterLoad: false,
   errorMessage: "",
   errorUrl: "",
   errorLinkText: "",
+  dashboardName: "", // Agregar dashboardName al CONFIG
 }
 
 // Variables de estado
 let startTime
 const logEntries = []
+let currentUserData = null
+let currentUserEmail = "Desconocido"
 
 // Elementos del DOM
 const statusIcon = document.getElementById("statusIcon")
@@ -57,38 +60,41 @@ const log = (message, type = "info") => {
 const TRACKING_URL =
   "https://script.google.com/a/macros/mercadolibre.com/s/AKfycby4CQC1j-FCY2dFnCogHcPS-O3rsZwVtVSH6SG2ps7typqNpymkKYz3z9JdxVIO1yDS/exec"
 
-async function sendErrorTracking(status = "Sin Acceso") {
+async function sendTracking(userEmail, status) {
   try {
-    let userEmail = "Desconocido"
-    try {
-      userEmail = tableau.extensions.environment.userName || "Desconocido"
-    } catch (e) {}
-
-    let dashboardName = "Dashboard Desconocido"
-    try {
-      dashboardName = tableau.extensions.dashboardContent.dashboard.name || "Dashboard Desconocido"
-    } catch (e) {}
+    // Usar el nombre del dashboard configurado, o intentar obtenerlo de Tableau
+    let dashboardName = CONFIG.dashboardName || "Dashboard Desconocido"
+    if (!CONFIG.dashboardName) {
+      try {
+        dashboardName = tableau.extensions.dashboardContent.dashboard.name || "Dashboard Desconocido"
+      } catch (e) {}
+    }
 
     const trackingData = {
-      Email: userEmail,
+      Email: userEmail || "Desconocido",
       Horario: new Date().toISOString(),
       Dashboard: dashboardName,
       Status: status,
     }
 
-    console.log("[v0] Enviando tracking via Image beacon:", JSON.stringify(trackingData))
+    console.log("[v0] Enviando tracking:", JSON.stringify(trackingData))
 
-    // Usar Image beacon - no tiene restricciones de CORS
-    const params = new URLSearchParams(trackingData)
+    // Usar Image beacon para evitar CORS
+    const params = new URLSearchParams(trackingData).toString()
     const img = new Image()
-    img.onload = () => console.log("[v0] Tracking enviado exitosamente")
-    img.onerror = () => console.log("[v0] Error al enviar tracking (puede ser normal con Apps Script)")
-    img.src = `${TRACKING_URL}?${params.toString()}`
+    img.src = `${TRACKING_URL}?${params}`
+
+    console.log("[v0] Tracking enviado via Image beacon")
   } catch (error) {
-    console.log("[v0] Error en tracking:", error)
+    console.error("[v0] Error enviando tracking:", error)
   }
 }
-// </CHANGE>
+
+// Mantener función legacy para compatibilidad
+async function sendErrorTracking(status = "Sin Acceso") {
+  // Esta función ahora solo se usa como fallback cuando no tenemos userData
+  sendTracking("Desconocido", status)
+}
 
 // Inicializar extensión
 log("Iniciando inicialización de extensión...")
@@ -168,9 +174,13 @@ async function autoLoadParameters() {
     if (!userData) {
       const errorMsg = CONFIG.errorMessage || "No se pudo obtener tus datos. Por favor, contacta con soporte."
       log("No se encontraron datos del usuario", "error")
-      showError(errorMsg)
+      showError(errorMsg, "Desconocido")
       return
     }
+
+    currentUserData = userData
+    currentUserEmail = userData[CONFIG.usernameColumn] || "Desconocido"
+    log(`Email del usuario: ${currentUserEmail}`)
 
     log("Datos cargados correctamente para tu usuario")
 
@@ -181,7 +191,7 @@ async function autoLoadParameters() {
     if (successCount === 0) {
       const errorMsg = CONFIG.errorMessage || "No se pudo actualizar ningún parámetro. Contacta con soporte."
       log("No se actualizó ningún parámetro", "error")
-      showError(errorMsg)
+      showError(errorMsg, currentUserEmail)
       return
     }
 
@@ -197,7 +207,7 @@ async function autoLoadParameters() {
     ) {
       const errorMsg = CONFIG.errorMessage || "No tienes un rol asignado. Contacta con soporte."
       log("Usuario sin rol válido (NULL, vacío o NO_ROLE), mostrando error")
-      showError(errorMsg)
+      showError(errorMsg, currentUserEmail)
       return
     }
 
@@ -207,11 +217,16 @@ async function autoLoadParameters() {
       .map((m) => `${m.parameterName}: ${userData[m.columnName] || "N/A"}`)
       .join(", ")
 
-    showSuccess(`Parámetros configurados exitosamente en ${elapsedTime}s`, paramsList, firstParamValue)
+    showSuccess(
+      `Parámetros configurados exitosamente en ${elapsedTime}s`,
+      paramsList,
+      firstParamValue,
+      currentUserEmail,
+    )
   } catch (error) {
     log("Error en autoLoadParameters: " + error, "error")
     const errorMsg = CONFIG.errorMessage || `Error al cargar parámetros: ${error.message}`
-    showError(errorMsg)
+    showError(errorMsg, currentUserEmail)
   }
 }
 
@@ -482,18 +497,22 @@ function loadConfiguration() {
     log("Cargando configuración...")
     const settings = tableau.extensions.settings.getAll()
 
-    if (settings.dataSourceName) {
-      CONFIG.dataSourceName = settings.dataSourceName
-      CONFIG.worksheetName = settings.worksheetName || null
-      CONFIG.usernameColumn = settings.usernameColumn || "username"
-      CONFIG.parameterMappings = JSON.parse(settings.parameterMappings || "[]")
+    log("Settings cargados: " + JSON.stringify(settings))
+
+    if (settings.configured === "true") {
+      CONFIG.worksheetName = settings.worksheetName || ""
+      CONFIG.dataSourceName = settings.dataSourceName || ""
+      CONFIG.usernameColumn = settings.usernameColumn || ""
+      CONFIG.parameterMappings = settings.parameterMappings ? JSON.parse(settings.parameterMappings) : []
       CONFIG.hideAfterLoad = settings.hideAfterLoad === "true"
       CONFIG.errorMessage = settings.errorMessage || ""
-      CONFIG.errorUrl = settings.errorUrl || "" // Cargar URL de error
-      CONFIG.errorLinkText = settings.errorLinkText || "" // Cargar texto de enlace de error
+      CONFIG.errorUrl = settings.errorUrl || ""
+      CONFIG.errorLinkText = settings.errorLinkText || ""
+      CONFIG.dashboardName = settings.dashboardName || "" // Cargar dashboardName
 
       log("Configuración cargada correctamente")
-      log(`hideAfterLoad: ${CONFIG.hideAfterLoad}`)
+      log("hideAfterLoad: " + CONFIG.hideAfterLoad)
+      log("dashboardName: " + CONFIG.dashboardName)
       return true
     } else {
       log("No hay configuración guardada")
@@ -581,9 +600,9 @@ function hideMessage() {
 // =========================
 // Mostrar error general
 // =========================
-function showError(message) {
-  // Enviar tracking de error a Google Apps Script
-  sendErrorTracking("Sin Acceso")
+function showError(message, userEmail = "Desconocido") {
+  // Enviar tracking de error a Google Apps Script con el email real
+  sendTracking(userEmail, "Sin Acceso")
 
   // Si hay una URL de error configurada, agregar el enlace
   let displayMessage = message
@@ -611,7 +630,10 @@ function addLog(message, type = "info") {
 // =========================
 // Mostrar éxito personalizado
 // =========================
-function showSuccess(title, subtitle, roleValue) {
+function showSuccess(title, subtitle, roleValue, userEmail = "Desconocido") {
+  // Enviar tracking de acceso exitoso con el ROL como status
+  sendTracking(userEmail, roleValue || "Acceso OK")
+
   // Solo verificar si debe ocultarse
   const shouldHide =
     CONFIG.hideAfterLoad === true &&
