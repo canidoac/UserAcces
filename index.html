@@ -7,7 +7,6 @@
   <title>Auto Parámetros Tableau</title>
   
   <script src="https://cdn.jsdelivr.net/gh/tableau/extensions-api/lib/tableau.extensions.1.latest.min.js"></script>
-  <!-- Agregar Material Icons para el spinner -->
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
   
   <style>
@@ -20,7 +19,6 @@
     html, body {
       width: 100%;
       height: 100%;
-      /* Fondo transparente por defecto para que no bloquee el dashboard */
       background: transparent !important;
     }
     
@@ -29,16 +27,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
     }
     
-    /* Clase para mostrar contenido - el contenedor tiene el fondo, no el body */
     body.visible .container {
       opacity: 1;
       pointer-events: auto;
     }
     
-    /* Clase para ocultar - hace el contenedor invisible y sin interacción */
     body.hidden .container {
       opacity: 0 !important;
       pointer-events: none !important;
@@ -49,14 +44,17 @@
       pointer-events: none !important;
     }
     
+    /* Container ahora cubre TODA la pantalla */
     .container {
-      width: 100%;
-      max-width: 600px;
-      text-align: center;
-      /* Fondo en el contenedor, no en el body */
+      width: 100vw;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%);
-      border-radius: 20px;
-      padding: 30px;
       transition: opacity 0.3s ease, visibility 0.3s ease;
     }
     
@@ -65,7 +63,9 @@
       border-radius: 16px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
       padding: 40px 30px;
-      margin-bottom: 20px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
     }
     
     .status-icon {
@@ -80,7 +80,6 @@
       transition: all 0.3s ease;
     }
     
-    /* Spinner de Google Material Design */
     .status-icon.loading {
       background: #3b82f6;
       color: white;
@@ -160,7 +159,6 @@
       color: #2563eb;
     }
     
-    /* Botón de configurar más pequeño, solo ícono */
     .btn-configure {
       background: #3b82f6;
       color: white;
@@ -195,6 +193,10 @@
     }
     
     .log-container {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
       background: #1f2937;
       border-radius: 12px;
       padding: 15px;
@@ -203,6 +205,7 @@
       text-align: left;
       font-family: 'Courier New', monospace;
       font-size: 11px;
+      z-index: 9999;
     }
     
     .log-entry {
@@ -225,7 +228,6 @@
   <div class="container" id="mainContainer">
     <div class="card">
       <div class="status-icon loading" id="statusIcon">
-        <!-- Spinner de Google Material Design progress_activity -->
         <span class="material-symbols-outlined spinning">progress_activity</span>
       </div>
       <h1 id="statusTitle">Cargando...</h1>
@@ -239,7 +241,6 @@
     <div class="log-container" id="logContainer" style="display: none;"></div>
   </div>
   
-  <!-- Botón de configurar solo con ícono, sin texto -->
   <button class="btn-configure" id="configureBtn" style="display: none;" title="Configurar extensión">
     ⚙
   </button>

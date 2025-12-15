@@ -59,57 +59,45 @@ const TRACKING_URL =
 
 async function sendErrorTracking(status = "Sin Acceso") {
   try {
-    // Obtener email del usuario si está disponible
-    let userEmail = "Desconocido";
+    let userEmail = "Desconocido"
     try {
-      userEmail = tableau.extensions.environment.userName || "Desconocido";
-    } catch (e) {
-      // Si no se puede obtener, usar desconocido
-    }
+      userEmail = tableau.extensions.environment.userName || "Desconocido"
+    } catch (e) {}
 
-    // Obtener nombre del dashboard
-    let dashboardName = "Dashboard Desconocido";
+    let dashboardName = "Dashboard Desconocido"
     try {
-      dashboardName = tableau.extensions.dashboardContent.dashboard.name || "Dashboard Desconocido";
-    } catch (e) {
-      // Si no se puede obtener, usar desconocido
-    }
+      dashboardName = tableau.extensions.dashboardContent.dashboard.name || "Dashboard Desconocido"
+    } catch (e) {}
 
     const trackingData = {
       Email: userEmail,
       Horario: new Date().toISOString(),
       Dashboard: dashboardName,
       Status: status,
-    };
-
-    log(`Enviando tracking: ${JSON.stringify(trackingData)}`);
-
-    // La solicitud se hace a tu URL de Apps Script.
-    // Eliminamos 'mode: "no-cors"' para poder leer la respuesta del servidor.
-    const response = await fetch(TRACKING_URL, {
-      method: "POST",
-      redirect: "follow", // Es una buena práctica para las APIs de Google.
-      headers: {
-        // Usamos text/plain para evitar una solicitud "pre-flight" de CORS.
-        // El script de Google procesará el cuerpo (body) correctamente.
-        "Content-Type": "text/plain;charset=utf-8",
-      },
-      body: JSON.stringify(trackingData), // El objeto de datos se convierte a string.
-    });
-
-    // Verificamos si el servidor respondió con un código de éxito (ej. 200 OK).
-    if (response.ok) {
-      log("Tracking enviado y confirmado correctamente.", "success");
-    } else {
-      // Si el servidor responde con un error, lo registramos en la consola de la extensión.
-      const errorText = await response.text();
-      log(`Error del servidor al enviar tracking: ${response.status} - ${errorText}`, "error");
     }
 
+    console.log("[v0] Enviando tracking:", JSON.stringify(trackingData))
+
+    // Intentar primero con fetch normal
+    try {
+      const response = await fetch(TRACKING_URL, {
+        method: "POST",
+        mode: "no-cors", // Evita problemas de CORS
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        body: JSON.stringify(trackingData),
+      })
+      console.log("[v0] Tracking enviado (no-cors mode)")
+    } catch (fetchError) {
+      console.log("[v0] Fetch falló, intentando con Image beacon...")
+      // Fallback: usar Image beacon si fetch falla
+      const params = new URLSearchParams(trackingData)
+      const img = new Image()
+      img.src = `${TRACKING_URL}?${params.toString()}`
+    }
   } catch (error) {
-    // Este bloque 'catch' ahora se ejecutará principalmente si hay un problema de red
-    // (ej. el usuario no tiene conexión a internet).
-    log("Error de red al enviar tracking: " + error, "warning");
+    console.log("[v0] Error en tracking:", error)
   }
 }
 
