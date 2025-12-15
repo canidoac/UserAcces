@@ -69,19 +69,6 @@ async function sendTracking(userEmail, status) {
     const env = tableau.extensions.environment
 
     console.log("[v0] ====== DEBUG TRACKING ======")
-    console.log("[v0] Todas las keys del environment:", Object.keys(env))
-    console.log("[v0] Todas las propiedades (getOwnPropertyNames):", Object.getOwnPropertyNames(env))
-
-    // Intentar acceder al _uniqueUserId de diferentes formas
-    console.log("[v0] env._uniqueUserId:", env._uniqueUserId)
-    console.log("[v0] env['_uniqueUserId']:", env["_uniqueUserId"])
-
-    // Buscar cualquier propiedad que contenga "user" o "User"
-    for (const key of Object.keys(env)) {
-      if (key.toLowerCase().includes("user") || key.toLowerCase().includes("id")) {
-        console.log(`[v0] env.${key}:`, env[key])
-      }
-    }
 
     let finalEmail = "Desconocido"
 
@@ -100,15 +87,22 @@ async function sendTracking(userEmail, status) {
       finalEmail = env.userDisplayName
       console.log("[v0] Usando userDisplayName:", finalEmail)
     }
-    // 4. Usar _uniqueUserId de Tableau Cloud
+    // 4. Extraer _uniqueUserId del JSON stringificado (propiedad privada)
     else {
-      // Intentar todas las formas posibles de acceder
-      const uniqueId = env._uniqueUserId || env["_uniqueUserId"]
-      console.log("[v0] uniqueId encontrado:", uniqueId)
+      try {
+        const envString = JSON.stringify(env)
+        console.log("[v0] Environment stringificado para buscar _uniqueUserId")
 
-      if (uniqueId) {
-        finalEmail = `user_${uniqueId.substring(0, 12)}`
-        console.log("[v0] Usando _uniqueUserId:", finalEmail)
+        const uniqueIdMatch = envString.match(/"_uniqueUserId":"([^"]+)"/)
+
+        if (uniqueIdMatch && uniqueIdMatch[1]) {
+          finalEmail = `user_${uniqueIdMatch[1].substring(0, 12)}`
+          console.log("[v0] Usando _uniqueUserId extraído:", finalEmail)
+        } else {
+          console.log("[v0] No se encontró _uniqueUserId en el JSON")
+        }
+      } catch (e) {
+        console.log("[v0] Error extrayendo _uniqueUserId:", e)
       }
     }
 
@@ -137,7 +131,7 @@ async function sendTracking(userEmail, status) {
     const img = new Image()
     img.src = `${CONFIG.trackingUrl}?${params}`
 
-    console.log("[v0] Tracking enviado via Image beacon")
+    console.log("[v0] Tracking enviado via Image beacon a:", CONFIG.trackingUrl)
   } catch (error) {
     console.error("[v0] Error enviando tracking:", error)
   }
