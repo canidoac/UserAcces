@@ -66,32 +66,54 @@ async function sendTracking(userEmail, status) {
       return
     }
 
+    const env = tableau.extensions.environment
+
+    console.log("[v0] ====== DEBUG TRACKING ======")
+    console.log("[v0] Todas las keys del environment:", Object.keys(env))
+    console.log("[v0] Todas las propiedades (getOwnPropertyNames):", Object.getOwnPropertyNames(env))
+
+    // Intentar acceder al _uniqueUserId de diferentes formas
+    console.log("[v0] env._uniqueUserId:", env._uniqueUserId)
+    console.log("[v0] env['_uniqueUserId']:", env["_uniqueUserId"])
+
+    // Buscar cualquier propiedad que contenga "user" o "User"
+    for (const key of Object.keys(env)) {
+      if (key.toLowerCase().includes("user") || key.toLowerCase().includes("id")) {
+        console.log(`[v0] env.${key}:`, env[key])
+      }
+    }
+
     let finalEmail = "Desconocido"
 
     // 1. Primero intentar con el userEmail que viene del userData
     if (userEmail && userEmail !== "Desconocido" && userEmail.trim() !== "") {
       finalEmail = userEmail
+      console.log("[v0] Usando userEmail de userData:", finalEmail)
     }
     // 2. Intentar userName de Tableau (Tableau Server)
-    else if (tableau.extensions.environment.userName && tableau.extensions.environment.userName.trim() !== "") {
-      finalEmail = tableau.extensions.environment.userName
+    else if (env.userName && env.userName.trim() !== "") {
+      finalEmail = env.userName
+      console.log("[v0] Usando userName:", finalEmail)
     }
     // 3. Intentar userDisplayName de Tableau
-    else if (
-      tableau.extensions.environment.userDisplayName &&
-      tableau.extensions.environment.userDisplayName.trim() !== ""
-    ) {
-      finalEmail = tableau.extensions.environment.userDisplayName
+    else if (env.userDisplayName && env.userDisplayName.trim() !== "") {
+      finalEmail = env.userDisplayName
+      console.log("[v0] Usando userDisplayName:", finalEmail)
     }
-    // 4. Usar _uniqueUserId de Tableau Cloud (siempre disponible en Cloud)
+    // 4. Usar _uniqueUserId de Tableau Cloud
     else {
-      const env = tableau.extensions.environment
-      // Acceder a propiedades privadas de Tableau Cloud
+      // Intentar todas las formas posibles de acceder
       const uniqueId = env._uniqueUserId || env["_uniqueUserId"]
+      console.log("[v0] uniqueId encontrado:", uniqueId)
+
       if (uniqueId) {
-        finalEmail = `user_${uniqueId.substring(0, 12)}` // Usar los primeros 12 caracteres
+        finalEmail = `user_${uniqueId.substring(0, 12)}`
+        console.log("[v0] Usando _uniqueUserId:", finalEmail)
       }
     }
+
+    console.log("[v0] finalEmail final:", finalEmail)
+    console.log("[v0] ===========================")
 
     // Usar el nombre del dashboard configurado, o intentar obtenerlo de Tableau
     let dashboardName = CONFIG.dashboardName || "Dashboard Desconocido"
