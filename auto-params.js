@@ -66,23 +66,33 @@ async function sendTracking(userEmail, status) {
       return
     }
 
+    console.log("[v0] ====== DEBUG TRACKING ======")
+    console.log("[v0] tableau.extensions.environment:", JSON.stringify(tableau.extensions.environment))
+    console.log("[v0] userName directo:", tableau.extensions.environment.userName)
+    console.log("[v0] userEmail recibido:", userEmail)
+
     // Siempre intentar obtener el usuario de Tableau primero
     let finalEmail = "Desconocido"
-    try {
-      const tableauUser = tableau.extensions.environment.userName
-      if (tableauUser && tableauUser.trim() !== "") {
-        finalEmail = tableauUser
-        console.log("[v0] Usando userName de Tableau API:", finalEmail)
-      }
-    } catch (e) {
-      console.log("[v0] No se pudo obtener userName de Tableau:", e.message)
+
+    const tableauUser = tableau.extensions.environment.userName
+    const tableauUserFull = tableau.extensions.environment.userDisplayName // Alternativa
+
+    console.log("[v0] tableauUser:", tableauUser)
+    console.log("[v0] tableauUserFull:", tableauUserFull)
+
+    if (tableauUser && tableauUser.trim() !== "") {
+      finalEmail = tableauUser
+      console.log("[v0] Usando userName:", finalEmail)
+    } else if (tableauUserFull && tableauUserFull.trim() !== "") {
+      finalEmail = tableauUserFull
+      console.log("[v0] Usando userDisplayName:", finalEmail)
+    } else if (userEmail && userEmail !== "Desconocido" && userEmail.trim() !== "") {
+      finalEmail = userEmail
+      console.log("[v0] Usando userEmail del parámetro:", finalEmail)
     }
 
-    // Si no se obtuvo de Tableau, usar el email pasado como parámetro
-    if (finalEmail === "Desconocido" && userEmail && userEmail !== "Desconocido") {
-      finalEmail = userEmail
-      console.log("[v0] Usando email de userData:", finalEmail)
-    }
+    console.log("[v0] finalEmail final:", finalEmail)
+    console.log("[v0] ============================")
 
     // Usar el nombre del dashboard configurado, o intentar obtenerlo de Tableau
     let dashboardName = CONFIG.dashboardName || "Dashboard Desconocido"
