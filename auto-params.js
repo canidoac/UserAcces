@@ -594,8 +594,7 @@ function hideExtension() {
 
   log(`Ocultando extensión (Modo: ${editorMode ? "Editor" : "Visualización"})`)
 
-  document.body.style.opacity = "0"
-  document.body.style.pointerEvents = "none"
+  document.body.classList.add("hidden")
 
   // Intentar acceder al iframe de la extensión de Tableau para deshabilitarlo
   try {
