@@ -599,7 +599,13 @@ function hideExtension() {
   document.body.classList.remove("visible")
   document.body.classList.add("hidden")
 
-  // Intentar acceder al iframe de la extensión de Tableau para deshabilitarlo
+  const mainContainer = document.getElementById("mainContainer")
+  if (mainContainer) {
+    mainContainer.style.opacity = "0"
+    mainContainer.style.visibility = "hidden"
+    mainContainer.style.pointerEvents = "none"
+  }
+
   try {
     if (window.frameElement) {
       window.frameElement.style.pointerEvents = "none"
@@ -609,11 +615,12 @@ function hideExtension() {
     log("No se pudo acceder al frameElement: " + e.message)
   }
 
-  // Mantener el botón de configuración accesible en modo editor
   const configButton = document.getElementById("configureBtn")
   if (configButton && editorMode) {
+    configButton.style.display = "inline-flex"
     configButton.style.opacity = "1"
     configButton.style.pointerEvents = "auto"
+    configButton.style.visibility = "visible"
     log("Botón de configuración mantenido visible en modo editor")
   }
 }

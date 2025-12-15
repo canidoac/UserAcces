@@ -7,6 +7,8 @@
   <title>Auto Parámetros Tableau</title>
   
   <script src="https://cdn.jsdelivr.net/gh/tableau/extensions-api/lib/tableau.extensions.1.latest.min.js"></script>
+  <!-- Agregar Material Icons para el spinner -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
   
   <style>
     * {
@@ -15,36 +17,47 @@
       box-sizing: border-box;
     }
     
+    html, body {
+      width: 100%;
+      height: 100%;
+      /* Fondo transparente por defecto para que no bloquee el dashboard */
+      background: transparent !important;
+    }
+    
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      /* Fondo transparente por defecto */
-      background: transparent;
-      width: 100%;
-      height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
-      transition: opacity 0.3s ease, background 0.3s ease;
     }
     
-    /* Fondo celeste solo cuando está visible */
-    body.visible {
-      background: transparent;
-      /*background: linear-gradient(135deg, #a8d8f0 0%, #d4e7f5 100%);*/
+    /* Clase para mostrar contenido - el contenedor tiene el fondo, no el body */
+    body.visible .container {
+      opacity: 1;
+      pointer-events: auto;
     }
     
-    /* Clase para ocultar y deshabilitar interacción sin mover */
-    body.hidden {
+    /* Clase para ocultar - hace el contenedor invisible y sin interacción */
+    body.hidden .container {
       opacity: 0 !important;
       pointer-events: none !important;
-      background: transparent !important;
+      visibility: hidden !important;
+    }
+    
+    body.hidden {
+      pointer-events: none !important;
     }
     
     .container {
       width: 100%;
       max-width: 600px;
       text-align: center;
+      /* Fondo en el contenedor, no en el body */
+      background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%);
+      border-radius: 20px;
+      padding: 30px;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
     }
     
     .card {
@@ -67,11 +80,15 @@
       transition: all 0.3s ease;
     }
     
-    /* Spinner giratorio para estado de carga */
+    /* Spinner de Google Material Design */
     .status-icon.loading {
       background: #3b82f6;
       color: white;
-      animation: spin 1.5s linear infinite;
+    }
+    
+    .material-symbols-outlined.spinning {
+      font-size: 32px;
+      animation: spin 1s linear infinite;
     }
     
     @keyframes spin {
@@ -162,7 +179,9 @@
       right: 10px;
       z-index: 99999;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      pointer-events: auto;
+      pointer-events: auto !important;
+      opacity: 1 !important;
+      visibility: visible !important;
     }
     
     .btn-configure:hover {
@@ -200,18 +219,14 @@
     .log-entry.error { color: #ef4444; }
     .log-entry.warning { color: #fbbf24; }
     .log-entry.info { color: #60a5fa; }
-    
-    .spinner {
-      display: inline-block;
-      animation: spin 1.5s linear infinite;
-    }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="container" id="mainContainer">
     <div class="card">
       <div class="status-icon loading" id="statusIcon">
-        <span class="spinner">⟳</span>
+        <!-- Spinner de Google Material Design progress_activity -->
+        <span class="material-symbols-outlined spinning">progress_activity</span>
       </div>
       <h1 id="statusTitle">Cargando...</h1>
       <p class="subtitle" id="statusSubtitle">Cargando Dashboard</p>
@@ -219,15 +234,16 @@
       <div class="message-box" id="messageBox" style="display: none;">
         <p class="message-text" id="messageText"></p>
       </div>
-      
-      <button class="btn-configure" id="configureBtn" style="display: none;">
-        <span>⚙</span>
-        <span>Configurar</span>
-      </button>
     </div>
     
     <div class="log-container" id="logContainer" style="display: none;"></div>
   </div>
+  
+  <!-- Botón de configurar fuera del contenedor para que siempre sea visible -->
+  <button class="btn-configure" id="configureBtn" style="display: none;">
+    <span>⚙</span>
+    <span>Configurar</span>
+  </button>
 
   <script src="auto-params.js"></script>
 </body>
