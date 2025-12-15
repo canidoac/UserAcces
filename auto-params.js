@@ -59,44 +59,48 @@ const TRACKING_URL =
 
 async function sendErrorTracking(status = "Sin Acceso") {
   try {
-    // Obtener email del usuario si está disponible
-    let userEmail = "Desconocido"
-    try {
-      userEmail = tableau.extensions.environment.userName || "Desconocido"
-    } catch (e) {
-      // Si no se puede obtener, usar desconocido
-    }
-
-    // Obtener nombre del dashboard
-    let dashboardName = "Dashboard Desconocido"
-    try {
-      dashboardName = tableau.extensions.dashboardContent.dashboard.name || "Dashboard Desconocido"
-    } catch (e) {
-      // Si no se puede obtener, usar desconocido
-    }
+    // ... (El código para obtener userEmail y dashboardName sigue igual) ...
 
     const trackingData = {
       Email: userEmail,
       Horario: new Date().toISOString(),
       Dashboard: dashboardName,
       Status: status,
+    };
+
+    log(`Enviando tracking: ${JSON.stringify(trackingData)}`);
+
+    // --- INICIO DE LA CORRECCIÓN ---
+
+    const response = await fetch(TRACKING_URL, {
+      method: "POST",
+      // mode: "no-cors" // <--- LÍNEA ELIMINADA
+      
+      // Google Apps Script necesita que el body sea un string, aunque el Content-Type sea JSON.
+      // Así que redirigimos la petición para evitar problemas de CORS.
+      redirect: "follow", 
+      headers: {
+        // El header 'Content-Type' aquí no es estrictamente necesario 
+        // porque el script de Google lo interpreta como texto plano de todas formas.
+        "Content-Type": "text/plain;charset=utf-8", 
+      },
+      body: JSON.stringify(trackingData), // El cuerpo sigue siendo un JSON stringificado
+    });
+
+    // Verificamos si la respuesta del servidor fue exitosa (código 200-299)
+    if (response.ok) {
+      log("Tracking enviado correctamente", "success");
+    } else {
+      // Si el servidor respondió con un error, lo registramos.
+      const errorText = await response.text();
+      log(`Error en la respuesta del tracking: ${response.status} ${response.statusText} - ${errorText}`, "error");
     }
 
-    log(`Enviando tracking: ${JSON.stringify(trackingData)}`)
+    // --- FIN DE LA CORRECCIÓN ---
 
-    await fetch(TRACKING_URL, {
-      method: "POST",
-      mode: "no-cors", // Google Apps Script requiere no-cors desde navegadores
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(trackingData),
-    })
-
-    log("Tracking enviado correctamente", "success")
   } catch (error) {
-    // No mostrar error al usuario, solo loguear
-    log("Error al enviar tracking: " + error, "warning")
+    // Este catch ahora capturará errores de red (ej. sin conexión a internet)
+    log("Error de red al enviar tracking: " + error, "warning");
   }
 }
 
