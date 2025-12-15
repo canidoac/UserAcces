@@ -59,7 +59,21 @@ const TRACKING_URL =
 
 async function sendErrorTracking(status = "Sin Acceso") {
   try {
-    // ... (El código para obtener userEmail y dashboardName sigue igual) ...
+    // Obtener email del usuario si está disponible
+    let userEmail = "Desconocido";
+    try {
+      userEmail = tableau.extensions.environment.userName || "Desconocido";
+    } catch (e) {
+      // Si no se puede obtener, usar desconocido
+    }
+
+    // Obtener nombre del dashboard
+    let dashboardName = "Dashboard Desconocido";
+    try {
+      dashboardName = tableau.extensions.dashboardContent.dashboard.name || "Dashboard Desconocido";
+    } catch (e) {
+      // Si no se puede obtener, usar desconocido
+    }
 
     const trackingData = {
       Email: userEmail,
@@ -70,36 +84,31 @@ async function sendErrorTracking(status = "Sin Acceso") {
 
     log(`Enviando tracking: ${JSON.stringify(trackingData)}`);
 
-    // --- INICIO DE LA CORRECCIÓN ---
-
+    // La solicitud se hace a tu URL de Apps Script.
+    // Eliminamos 'mode: "no-cors"' para poder leer la respuesta del servidor.
     const response = await fetch(TRACKING_URL, {
       method: "POST",
-      // mode: "no-cors" // <--- LÍNEA ELIMINADA
-      
-      // Google Apps Script necesita que el body sea un string, aunque el Content-Type sea JSON.
-      // Así que redirigimos la petición para evitar problemas de CORS.
-      redirect: "follow", 
+      redirect: "follow", // Es una buena práctica para las APIs de Google.
       headers: {
-        // El header 'Content-Type' aquí no es estrictamente necesario 
-        // porque el script de Google lo interpreta como texto plano de todas formas.
-        "Content-Type": "text/plain;charset=utf-8", 
+        // Usamos text/plain para evitar una solicitud "pre-flight" de CORS.
+        // El script de Google procesará el cuerpo (body) correctamente.
+        "Content-Type": "text/plain;charset=utf-8",
       },
-      body: JSON.stringify(trackingData), // El cuerpo sigue siendo un JSON stringificado
+      body: JSON.stringify(trackingData), // El objeto de datos se convierte a string.
     });
 
-    // Verificamos si la respuesta del servidor fue exitosa (código 200-299)
+    // Verificamos si el servidor respondió con un código de éxito (ej. 200 OK).
     if (response.ok) {
-      log("Tracking enviado correctamente", "success");
+      log("Tracking enviado y confirmado correctamente.", "success");
     } else {
-      // Si el servidor respondió con un error, lo registramos.
+      // Si el servidor responde con un error, lo registramos en la consola de la extensión.
       const errorText = await response.text();
-      log(`Error en la respuesta del tracking: ${response.status} ${response.statusText} - ${errorText}`, "error");
+      log(`Error del servidor al enviar tracking: ${response.status} - ${errorText}`, "error");
     }
 
-    // --- FIN DE LA CORRECCIÓN ---
-
   } catch (error) {
-    // Este catch ahora capturará errores de red (ej. sin conexión a internet)
+    // Este bloque 'catch' ahora se ejecutará principalmente si hay un problema de red
+    // (ej. el usuario no tiene conexión a internet).
     log("Error de red al enviar tracking: " + error, "warning");
   }
 }
