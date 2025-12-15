@@ -14,17 +14,17 @@ Este archivo contiene instrucciones para activar GitHub Pages en tu repositorio.
 ## Verificación:
 
 Después de unos minutos (2-5 min), tu extensión estará disponible en:
-\`\`\`
+```
 https://canidoac.github.io/UserAcces/
-\`\`\`
+```
 
 Para usar la extensión en Tableau Desktop:
 1. Arrastra un objeto "Extension" al dashboard
 2. Selecciona "Access Local Extensions" 
 3. Usa esta URL en el manifest:
-\`\`\`
+```
 https://canidoac.github.io/UserAcces/UserAcces.trex
-\`\`\`
+```
 
 ## Archivos Importantes:
 

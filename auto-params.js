@@ -509,10 +509,14 @@ function updateStatus(title, subtitle, status = "loading", message = null, isEdi
     messageBox.style.display = "block"
     messageBox.className = "message-box " + status
 
-    // Convertir URLs a enlaces clickeables
-    const urlRegex = /(https?:\/\/[^\s]+)/g
-    const messageWithLinks = message.replace(urlRegex, '<a href="$1" target="_blank">$1</a>')
-    messageText.innerHTML = messageWithLinks
+    // Si no, convertir URLs automáticamente a enlaces
+    if (message.includes("<a href=")) {
+      messageText.innerHTML = message
+    } else {
+      const urlRegex = /(https?:\/\/[^\s]+)/g
+      const messageWithLinks = message.replace(urlRegex, '<a href="$1" target="_blank">$1</a>')
+      messageText.innerHTML = messageWithLinks
+    }
   } else {
     messageBox.style.display = "none"
   }
@@ -540,14 +544,11 @@ function hideMessage() {
 // Mostrar error general
 // =========================
 function showError(message) {
-  // Si hay una URL de error configurada, reemplazar URLs largas con la URL de error
+  // Si hay una URL de error configurada, agregar el enlace
   let displayMessage = message
 
-  if (CONFIG.errorUrl) {
-    // Si hay texto personalizado, usarlo; si no, usar la URL
-    const linkText = CONFIG.errorLinkText || CONFIG.errorUrl
-    // Agregar el enlace al final del mensaje
-    displayMessage = `${message}<br><br><a href="${CONFIG.errorUrl}" target="_blank" style="color: #3b82f6; text-decoration: underline; font-weight: 600;">${linkText}</a>`
+  if (CONFIG.errorUrl && CONFIG.errorLinkText) {
+    displayMessage = `${message}<br><br><a href="${CONFIG.errorUrl}" target="_blank" style="color: #3b82f6; text-decoration: underline; font-weight: 600;">${CONFIG.errorLinkText}</a>`
   }
 
   updateStatus("Error", "Error", "error", displayMessage, isEditorMode())

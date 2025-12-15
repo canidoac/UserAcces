@@ -15,9 +15,9 @@ Extensión que alimenta parámetros automáticamente al abrir un dashboard de Ta
 ### Opción 1: GitHub Pages (Recomendado para Producción)
 
 La extensión está alojada en:
-\`\`\`
+```
 https://canidoac.github.io/UserAcces/
-\`\`\`
+```
 
 **Para usar en Tableau Desktop:**
 
@@ -25,9 +25,9 @@ https://canidoac.github.io/UserAcces/
 2. Arrastra un objeto "Extension" al dashboard
 3. Haz clic en "Access Local Extensions"
 4. Pega esta URL o navega al archivo:
-\`\`\`
+```
 https://canidoac.github.io/UserAcces/UserAcces.trex
-\`\`\`
+```
 
 **Activar GitHub Pages** (si aún no está activo):
 1. Ve a Settings > Pages en tu repositorio
@@ -38,7 +38,7 @@ Ver instrucciones detalladas en: [INSTRUCCIONES_GITHUB_PAGES.md](INSTRUCCIONES_G
 
 ### Opción 2: Desarrollo Local
 
-\`\`\`bash
+```bash
 # Opción 1: Python (recomendado)
 python -m http.server 8000
 
@@ -47,7 +47,7 @@ npx http-server -p 8000
 
 # Opción 3: PHP
 php -S localhost:8000
-\`\`\`
+```
 
 ### 3. Agregar extensión a Tableau
 
@@ -70,7 +70,7 @@ php -S localhost:8000
 
 ### Flujo de ejecución
 
-\`\`\`
+```
 1. Dashboard se abre
    ↓
 2. Extensión obtiene username automáticamente
@@ -82,7 +82,7 @@ php -S localhost:8000
 5. Alimenta los parámetros correspondientes
    ↓
 6. ¡Listo! Dashboard cargado con parámetros personalizados
-\`\`\`
+```
 
 ### Ventajas vs. Método Anterior
 
@@ -118,11 +118,11 @@ Cuando estés listo para pasar a producción:
 1. Sube los archivos a un servidor web (GitHub Pages, Vercel, tu servidor)
 2. Actualiza la URL en `manifest.trex`:
 
-\`\`\`xml
+```xml
 <source-location>
   <url>https://tu-dominio.com/tableau-extension/index.html</url>
 </source-location>
-\`\`\`
+```
 
 3. Publica el dashboard en Tableau Server/Online con la extensión configurada
 
@@ -154,7 +154,7 @@ Cuando estés listo para pasar a producción:
 
 ## Estructura del Proyecto
 
-\`\`\`
+```
 UserAcces/
 ├── index.html          # Interfaz principal con logs y progreso
 ├── auto-params.js      # Lógica de carga automática de parámetros
@@ -163,7 +163,7 @@ UserAcces/
 ├── UserAcces.trex      # Manifest de Tableau (apunta a GitHub Pages)
 ├── .nojekyll           # Necesario para GitHub Pages
 └── README.md
-\`\`\`
+```
 
 ## Soporte
 
