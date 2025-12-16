@@ -19,26 +19,88 @@
     }
     
     .config-container {
-      max-width: 600px;
+      max-width: 650px;
       margin: 0 auto;
     }
     
-    h2 {
-      color: #1f2937;
+    /* Header mejorado con guía arriba */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 20px;
-      font-size: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #e5e7eb;
     }
     
+    .header h2 {
+      color: #1f2937;
+      font-size: 20px;
+      margin: 0;
+    }
+    
+    .btn-help {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .btn-help:hover {
+      background: #059669;
+    }
+    /* Fin header mejorado */
+    
+    /* Secciones colapsables con mejor organización */
+    .section {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      overflow: hidden;
+    }
+    
+    .section-header {
+      background: #f3f4f6;
+      padding: 12px 15px;
+      font-weight: 600;
+      color: #374151;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .section-header .icon {
+      font-size: 16px;
+    }
+    
+    .section-content {
+      padding: 15px;
+    }
+    /* Fin secciones */
+    
     .form-group {
-      margin-bottom: 20px;
+      margin-bottom: 15px;
+    }
+    
+    .form-group:last-child {
+      margin-bottom: 0;
     }
     
     label {
       display: block;
       color: #374151;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     
     select, input {
@@ -49,22 +111,34 @@
       font-size: 14px;
     }
     
+    select:focus, input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .hint {
+      color: #6b7280;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+    
     .mapping-section {
-      background: white;
+      background: #f9fafb;
       border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 10px;
     }
     
     .btn-add {
       background: #10b981;
       color: white;
       border: none;
-      padding: 10px 20px;
+      padding: 8px 16px;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
     }
     
@@ -72,7 +146,7 @@
       background: #ef4444;
       color: white;
       border: none;
-      padding: 8px 16px;
+      padding: 6px 12px;
       border-radius: 6px;
       cursor: pointer;
       font-size: 12px;
@@ -96,6 +170,10 @@
       font-weight: 600;
     }
     
+    .btn-primary:hover {
+      background: #5568d3;
+    }
+    
     .btn-secondary {
       flex: 1;
       background: #9ca3af;
@@ -107,188 +185,242 @@
       font-size: 14px;
       font-weight: 600;
     }
+    
+    /* Estilos para secciones especiales */
+    .section-tracking {
+      border-color: #f59e0b;
+    }
+    
+    .section-tracking .section-header {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    
+    .section-user {
+      border-color: #0ea5e9;
+    }
+    
+    .section-user .section-header {
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+    
+    .section-error {
+      border-color: #ef4444;
+    }
+    
+    .section-error .section-header {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    
+    .section-import {
+      border-color: #10b981;
+    }
+    
+    .section-import .section-header {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    /* Fin estilos secciones especiales */
+    
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-weight: normal;
+    }
+    
+    .checkbox-label input {
+      width: auto;
+    }
   </style>
 </head>
 <body>
   <div class="config-container">
-    <h2>Configuración de Auto Parámetros</h2>
-    
-    <!-- Agregando campo para nombre del dashboard -->
-    <div class="form-group">
-      <label for="dashboardName">Nombre del Dashboard (para tracking):</label>
-      <input 
-        type="text" 
-        id="dashboardName" 
-        placeholder="Ej: Dashboard de Ventas, Reporte Financiero"
-        maxlength="100"
-      >
-      <p style="color: #6b7280; font-size: 12px; margin-top: 5px;">
-        Este nombre se usará para identificar el dashboard en los logs de acceso
-      </p>
-    </div>
-    <!-- Fin campo nombre dashboard -->
-    
-    <!-- Agregando campo para parámetro de usuario de Tableau -->
-    <div class="form-group" style="background: #e0f2fe; border: 1px solid #0ea5e9; border-radius: 6px; padding: 15px; margin-bottom: 15px;">
-      <label for="usernameParameter" style="color: #0369a1; font-weight: 600;">
-        Nombre del Parámetro de Usuario en Tableau:
-      </label>
-      <input 
-        type="text" 
-        id="usernameParameter" 
-        placeholder="Ej: CurrentUser, UsuarioActual, pUsuario"
-        maxlength="100"
-      >
-      <p style="color: #0369a1; font-size: 12px; margin-top: 5px;">
-        <strong>Importante:</strong> Crea un parámetro en Tableau con valor por defecto <code>USERNAME()</code>. 
-        Esto capturará el email del usuario logueado para el tracking, incluso si no tiene acceso a los datos.
-      </p>
-    </div>
-    <!-- Fin campo parámetro de usuario -->
-    
-    <!-- Agregando selección de worksheet primero -->
-    <div class="form-group">
-      <label for="worksheet">Worksheet (Hoja) de Datos:</label>
-      <select id="worksheet">
-        <option value="">Seleccionar hoja...</option>
-      </select>
-      <p style="color: #6b7280; font-size: 12px; margin-top: 5px;">
-        Primero selecciona la hoja que contiene la fuente de datos de usuarios
-      </p>
-    </div>
-    
-    <div class="form-group">
-      <label for="dataSource">Fuente de Datos de Usuarios:</label>
-      <select id="dataSource">
-        <option value="">Primero selecciona una hoja...</option>
-      </select>
-    </div>
-    
-    <div class="form-group">
-      <label for="usernameColumn">Columna de Username:</label>
-      <select id="usernameColumn">
-        <option value="">Primero selecciona una fuente de datos...</option>
-      </select>
-    </div>
-
-    <!-- Agregando opciones adicionales -->
-    <div class="form-group">
-      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-        <input type="checkbox" id="hideAfterLoad" style="width: auto; cursor: pointer;">
-        <span>Ocultar extensión después de cargar parámetros</span>
-      </label>
-      <p style="color: #6b7280; font-size: 12px; margin-top: 5px; margin-left: 24px;">
-        La extensión se ocultará automáticamente una vez que los parámetros se carguen exitosamente
-      </p>
-    </div>
-
-    <div class="form-group">
-      <label for="errorMessage">Mensaje personalizado cuando no encuentra usuario:</label>
-      <input 
-        type="text" 
-        id="errorMessage" 
-        placeholder="Ej: No se encontraron datos para tu usuario. Contacta a soporte."
-        maxlength="200"
-      >
-      <p style="color: #6b7280; font-size: 12px; margin-top: 5px;">
-        Este mensaje se mostrará si no se encuentra el usuario en la fuente de datos. Puedes incluir URLs.
-      </p>
-    </div>
-    
-    <!-- Reemplazando campo de URL acortada por URL y texto del enlace -->
-    <div class="form-group">
-      <label for="errorUrl">URL del enlace (opcional):</label>
-      <input 
-        type="text" 
-        id="errorUrl" 
-        placeholder="Ej: https://mercadolibre.atlassian.net/servicedesk/customer/portal/123"
-        maxlength="300"
-      >
-      <p style="color: #6b7280; font-size: 12px; margin-top: 5px;">
-        URL a la que se redirigirá cuando el usuario haga click en el enlace
-      </p>
-    </div>
-    
-    <div class="form-group">
-      <label for="errorLinkText">Texto del enlace (opcional):</label>
-      <input 
-        type="text" 
-        id="errorLinkText" 
-        placeholder="Ej: Click Aquí, Crear Ticket, Contactar Soporte"
-        maxlength="50"
-      >
-      <p style="color: #6b7280; font-size: 12px; margin-top: 5px;">
-        Texto que se mostrará como enlace clickeable. Si está vacío, se mostrará la URL completa
-      </p>
-    </div>
-    <!-- Fin de opciones de enlace personalizado -->
-
-    <!-- Agregando campo para URL del script de tracking -->
-    <div class="form-group" style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 15px; margin-bottom: 15px;">
-      <label for="trackingUrl" style="color: #92400e; font-weight: 600;">
-        URL del Script de Tracking (Google Apps Script):
-      </label>
-      <input 
-        type="text" 
-        id="trackingUrl" 
-        placeholder="https://script.google.com/macros/s/xxxxxxx/exec"
-        style="font-family: monospace; font-size: 12px;"
-      >
-      <p style="color: #92400e; font-size: 12px; margin-top: 5px;">
-        URL de tu Google Apps Script para registrar accesos. Deja vacío para desactivar el tracking.
-      </p>
-    </div>
-    <!-- Fin campo URL tracking -->
-
-    <!-- Agregar opción de importar CSV -->
-    <div class="form-group" style="background: #f0fdf4; border: 1px dashed #10b981; border-radius: 6px; padding: 15px; margin-bottom: 15px;">
-      <label for="csvInput" style="color: #059669;">Importar Mapeos desde CSV (Opcional):</label>
-      <input 
-        type="text" 
-        id="csvInput" 
-        placeholder="Ej: EMAIL,Usuario,ROL,RolParametro,REGION,RegionParametro"
-        style="font-family: monospace; font-size: 13px;"
-      >
-      <p style="color: #059669; font-size: 12px; margin-top: 5px;">
-        Formato: Columna1,Parametro1,Columna2,Parametro2,... (pares de valores separados por comas)
-      </p>
-      <button class="btn-add" onclick="importFromCSV()" style="margin-top: 10px; font-size: 13px;">
-        📥 Importar desde CSV
+    <!-- Header con botón de ayuda arriba -->
+    <div class="header">
+      <h2>Configuración de Auto Parámetros</h2>
+      <button class="btn-help" onclick="openHelp()">
+        <span>📚</span> Ver Guía
       </button>
     </div>
-    <!-- Fin de opción de importar CSV -->
     
-    <!-- Agregar botón de copiar configuración en CSV -->
-    <div class="form-group" style="background: #eff6ff; border: 1px dashed #3b82f6; border-radius: 6px; padding: 15px; margin-bottom: 15px;">
-      <label style="color: #1e40af; font-weight: 600;">Exportar Configuración Actual:</label>
-      <p style="color: #1e40af; font-size: 12px; margin-bottom: 10px;">
-        Copia tu configuración actual de mapeos para compartir o respaldar
-      </p>
-      <button class="btn-add" onclick="copyConfigurationCSV()" style="margin-top: 10px; font-size: 13px; background: #3b82f6;">
-        📋 Copiar Configuración como CSV
-      </button>
+    <!-- Sección: Datos de Tableau -->
+    <div class="section">
+      <div class="section-header">
+        <span class="icon">📊</span> Fuente de Datos
+      </div>
+      <div class="section-content">
+        <div class="form-group">
+          <label for="worksheet">Worksheet (Hoja) de Datos:</label>
+          <select id="worksheet">
+            <option value="">Seleccionar hoja...</option>
+          </select>
+          <p class="hint">Selecciona la hoja que contiene la fuente de datos de usuarios</p>
+        </div>
+        
+        <div class="form-group">
+          <label for="dataSource">Fuente de Datos de Usuarios:</label>
+          <select id="dataSource">
+            <option value="">Primero selecciona una hoja...</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="usernameColumn">Columna de Username:</label>
+          <select id="usernameColumn">
+            <option value="">Primero selecciona una fuente de datos...</option>
+          </select>
+          <p class="hint">Columna que identifica al usuario (normalmente EMAIL o USERNAME)</p>
+        </div>
+      </div>
     </div>
-    <!-- Fin de botón de copiar -->
     
-    <!-- Agregando botón de ayuda -->
-    <div style="text-align: center; margin-bottom: 20px;">
-      <button 
-        onclick="openHelp()" 
-        style="background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;"
-      >
-        📚 Ver Guía de Ayuda
-      </button>
+    <!-- Sección: Identificación de Usuario con dropdown de parámetros -->
+    <div class="section section-user">
+      <div class="section-header">
+        <span class="icon">👤</span> Identificación de Usuario (para Tracking)
+      </div>
+      <div class="section-content">
+        <div class="form-group">
+          <label for="dashboardName">Nombre del Dashboard:</label>
+          <input 
+            type="text" 
+            id="dashboardName" 
+            placeholder="Ej: Dashboard de Ventas, Reporte Financiero"
+            maxlength="100"
+          >
+          <p class="hint">Este nombre se usará para identificar el dashboard en los logs</p>
+        </div>
+        
+        <div class="form-group">
+          <label for="usernameParameter">Parámetro de Usuario en Tableau:</label>
+          <select id="usernameParameter">
+            <option value="">Seleccionar parámetro...</option>
+          </select>
+          <p class="hint">
+            <strong>Importante:</strong> Crea un parámetro en Tableau con valor <code>USERNAME()</code> para capturar el email del usuario logueado
+          </p>
+        </div>
+      </div>
     </div>
-    <!-- Fin de botón de ayuda -->
     
-    <h3 style="margin: 20px 0 10px; color: #1f2937; font-size: 16px;">Mapeo de Parámetros</h3>
-    <p style="color: #6b7280; font-size: 13px; margin-bottom: 15px;">
-      Define qué columna de la fuente de datos alimentará cada parámetro
-    </p>
+    <!-- Sección: Mapeo de Parámetros -->
+    <div class="section">
+      <div class="section-header">
+        <span class="icon">🔗</span> Mapeo de Parámetros
+      </div>
+      <div class="section-content">
+        <p class="hint" style="margin-bottom: 15px;">Define qué columna de datos alimentará cada parámetro de Tableau</p>
+        
+        <div id="mappingsContainer"></div>
+        
+        <button class="btn-add" onclick="addMapping()">+ Agregar Mapeo</button>
+      </div>
+    </div>
     
-    <div id="mappingsContainer"></div>
+    <!-- Sección: Comportamiento -->
+    <div class="section">
+      <div class="section-header">
+        <span class="icon">⚙️</span> Comportamiento
+      </div>
+      <div class="section-content">
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="hideAfterLoad">
+            <span>Ocultar extensión después de cargar parámetros</span>
+          </label>
+          <p class="hint" style="margin-left: 24px;">La extensión se ocultará una vez que los parámetros se carguen exitosamente</p>
+        </div>
+      </div>
+    </div>
     
-    <button class="btn-add" onclick="addMapping()">+ Agregar Mapeo</button>
+    <!-- Sección: Mensaje de Error -->
+    <div class="section section-error">
+      <div class="section-header">
+        <span class="icon">⚠️</span> Mensaje de Error (cuando no encuentra usuario)
+      </div>
+      <div class="section-content">
+        <div class="form-group">
+          <label for="errorMessage">Mensaje personalizado:</label>
+          <input 
+            type="text" 
+            id="errorMessage" 
+            placeholder="Ej: No se encontraron datos para tu usuario. Contacta a soporte."
+            maxlength="200"
+          >
+        </div>
+        
+        <div class="form-group">
+          <label for="errorUrl">URL del enlace (opcional):</label>
+          <input 
+            type="text" 
+            id="errorUrl" 
+            placeholder="Ej: https://miempresa.atlassian.net/servicedesk/customer/portal/123"
+            maxlength="300"
+          >
+        </div>
+        
+        <div class="form-group">
+          <label for="errorLinkText">Texto del enlace:</label>
+          <input 
+            type="text" 
+            id="errorLinkText" 
+            placeholder="Ej: Click Aquí, Crear Ticket, Contactar Soporte"
+            maxlength="50"
+          >
+          <p class="hint">Este texto se mostrará como enlace clickeable en el mensaje de error</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sección: Tracking -->
+    <div class="section section-tracking">
+      <div class="section-header">
+        <span class="icon">📈</span> Tracking de Accesos (Google Apps Script)
+      </div>
+      <div class="section-content">
+        <div class="form-group">
+          <label for="trackingUrl">URL del Script de Tracking:</label>
+          <input 
+            type="text" 
+            id="trackingUrl" 
+            placeholder="https://script.google.com/macros/s/xxxxxxx/exec"
+            style="font-family: monospace; font-size: 12px;"
+          >
+          <p class="hint">URL de tu Google Apps Script para registrar accesos. Deja vacío para desactivar</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sección: Importar/Exportar -->
+    <div class="section section-import">
+      <div class="section-header">
+        <span class="icon">📦</span> Importar / Exportar Configuración
+      </div>
+      <div class="section-content">
+        <div class="form-group">
+          <label for="csvInput">Importar Mapeos desde CSV:</label>
+          <input 
+            type="text" 
+            id="csvInput" 
+            placeholder="Ej: EMAIL,Usuario,ROL,RolParametro,REGION,RegionParametro"
+            style="font-family: monospace; font-size: 12px;"
+          >
+          <p class="hint">Formato: Columna1,Parametro1,Columna2,Parametro2,...</p>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button class="btn-add" onclick="importFromCSV()" style="flex: 1;">
+            📥 Importar CSV
+          </button>
+          <button class="btn-add" onclick="copyConfigurationCSV()" style="flex: 1; background: #3b82f6;">
+            📋 Exportar CSV
+          </button>
+        </div>
+      </div>
+    </div>
     
     <div class="actions">
       <button class="btn-primary" onclick="saveConfiguration()">Guardar Configuración</button>

@@ -19,7 +19,7 @@
     }
     
     .help-container {
-      max-width: 800px;
+      max-width: 850px;
       margin: 0 auto;
       background: white;
       border-radius: 12px;
@@ -84,6 +84,30 @@
       margin-bottom: 5px;
     }
     
+    .config-option.tracking {
+      border-left-color: #f59e0b;
+    }
+    
+    .config-option.tracking strong {
+      color: #92400e;
+    }
+    
+    .config-option.user {
+      border-left-color: #0ea5e9;
+    }
+    
+    .config-option.user strong {
+      color: #0369a1;
+    }
+    
+    .config-option.error {
+      border-left-color: #ef4444;
+    }
+    
+    .config-option.error strong {
+      color: #991b1b;
+    }
+    
     .note {
       background: #fef3c7;
       border-left: 4px solid #f59e0b;
@@ -94,6 +118,18 @@
     
     .note strong {
       color: #92400e;
+    }
+    
+    .tip {
+      background: #d1fae5;
+      border-left: 4px solid #10b981;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    
+    .tip strong {
+      color: #065f46;
     }
     
     .credits {
@@ -143,6 +179,38 @@
     .btn-close:hover {
       background: #5568d3;
     }
+    
+    /* Tabla de contenidos */
+    .toc {
+      background: #f3f4f6;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .toc h3 {
+      margin-top: 0;
+      color: #374151;
+    }
+    
+    .toc ul {
+      list-style: none;
+      margin: 0;
+    }
+    
+    .toc li {
+      margin-bottom: 5px;
+    }
+    
+    .toc a {
+      color: #667eea;
+      text-decoration: none;
+    }
+    
+    .toc a:hover {
+      text-decoration: underline;
+    }
+    /* Fin tabla de contenidos */
   </style>
 </head>
 <body>
@@ -150,80 +218,176 @@
     <h1>📚 Auto Parámetros - Guía de Configuración</h1>
     <p class="subtitle">Aprende cómo configurar y utilizar la extensión de Auto Parámetros para Tableau</p>
     
-    <h2>¿Qué hace esta extensión?</h2>
+    <!-- Tabla de contenidos -->
+    <div class="toc">
+      <h3>Contenido</h3>
+      <ul>
+        <li><a href="#que-hace">¿Qué hace esta extensión?</a></li>
+        <li><a href="#fuente-datos">1. Configurar Fuente de Datos</a></li>
+        <li><a href="#identificacion">2. Identificación de Usuario (Tracking)</a></li>
+        <li><a href="#mapeo">3. Mapeo de Parámetros</a></li>
+        <li><a href="#comportamiento">4. Comportamiento</a></li>
+        <li><a href="#error">5. Mensaje de Error</a></li>
+        <li><a href="#tracking">6. Tracking de Accesos</a></li>
+        <li><a href="#importar">7. Importar/Exportar Configuración</a></li>
+        <li><a href="#problemas">Solución de Problemas</a></li>
+      </ul>
+    </div>
+    
+    <h2 id="que-hace">¿Qué hace esta extensión?</h2>
     <p>
       Auto Parámetros permite cargar automáticamente valores en los parámetros de Tableau basándose en el usuario actual.
       La extensión lee datos de una fuente de datos (normalmente un Hyper) y configura múltiples parámetros simultáneamente.
     </p>
+    <p>
+      Además, registra cada acceso (exitoso o fallido) en un Google Sheet mediante un script de Google Apps Script,
+      permitiéndote tener un log de quién accede a cada dashboard y con qué rol.
+    </p>
     
-    <h2>Configuración Paso a Paso</h2>
+    <h2 id="fuente-datos">1. Configurar Fuente de Datos</h2>
     
     <div class="config-option">
-      <strong>1. Worksheet (Hoja) de Datos</strong>
+      <strong>📊 Worksheet (Hoja) de Datos</strong>
       <p>Selecciona la hoja de Tableau que contiene la fuente de datos con la información de usuarios.</p>
       <p><em>Ejemplo:</em> Si tienes una hoja llamada "Usuarios Config", selecciónala aquí.</p>
     </div>
     
     <div class="config-option">
-      <strong>2. Fuente de Datos de Usuarios</strong>
+      <strong>📊 Fuente de Datos de Usuarios</strong>
       <p>Una vez seleccionada la hoja, elige la fuente de datos específica (Hyper) que contiene los datos de usuarios.</p>
       <p><em>Ejemplo:</em> <code>HYPER_CONECTIVIDAD</code> o <code>usuarios.hyper</code></p>
     </div>
     
     <div class="config-option">
-      <strong>3. Columna de Username</strong>
+      <strong>📊 Columna de Username</strong>
       <p>Selecciona la columna que identifica al usuario actual. Normalmente es el campo de email.</p>
       <p><em>Ejemplo:</em> <code>EMAIL</code> o <code>USERNAME</code></p>
     </div>
     
-    <div class="config-option">
-      <strong>4. Ocultar extensión después de cargar</strong>
-      <p>
-        Si activas esta opción, la extensión se ocultará automáticamente una vez que los parámetros se carguen exitosamente.
-        Esto mejora la experiencia del usuario final al no mostrar la interfaz de carga después de completarse.
-      </p>
-      <p><strong>Nota:</strong> En modo editor, siempre podrás acceder a la configuración desde el menú de la extensión.</p>
+    <h2 id="identificacion">2. Identificación de Usuario (Tracking)</h2>
+    
+    <div class="config-option user">
+      <strong>👤 Nombre del Dashboard</strong>
+      <p>Define un nombre para identificar este dashboard en los logs de tracking.</p>
+      <p><em>Ejemplo:</em> "Dashboard de Ventas", "Reporte Financiero Q4"</p>
     </div>
     
-    <div class="config-option">
-      <strong>5. Mensaje de error personalizado</strong>
+    <div class="config-option user">
+      <strong>👤 Parámetro de Usuario en Tableau</strong>
       <p>
-        Define el mensaje que verán los usuarios cuando no se encuentren sus datos o no tengan un rol asignado.
-        Puedes incluir URLs que se convertirán automáticamente en enlaces clickeables.
+        Selecciona el parámetro de Tableau que contiene el email del usuario actual.
+        Este parámetro debe tener como valor por defecto la función <code>USERNAME()</code>.
       </p>
-      <p><em>Ejemplo:</em> "No se encontró tu usuario. Por favor contacta a soporte en https://miempresa.com/soporte"</p>
     </div>
     
-    <div class="config-option">
-      <strong>6. URL acortada (opcional)</strong>
-      <p>
-        Si tu mensaje de error incluye una URL larga, puedes usar un acortador de enlaces (como bit.ly o tinyurl.com)
-        y colocar aquí la URL corta. Esta URL se mostrará en el mensaje de error en lugar de la URL original.
-      </p>
-      <p><em>Ejemplo:</em> <code>https://bit.ly/soporte-tableau</code></p>
+    <div class="tip">
+      <strong>💡 Cómo crear el parámetro de usuario:</strong>
+      <ol style="margin-left: 20px; margin-top: 10px;">
+        <li>En Tableau Desktop, ve a <strong>Datos → Crear Parámetro</strong></li>
+        <li>Nombre: <code>CurrentUser</code> (o el nombre que prefieras)</li>
+        <li>Tipo de datos: <strong>Cadena</strong></li>
+        <li>Valor actual: escribe <code>USERNAME()</code></li>
+        <li>Guarda el parámetro</li>
+      </ol>
+      <p style="margin-top: 10px;">Este parámetro capturará automáticamente el email del usuario logueado en Tableau Server/Online.</p>
     </div>
     
-    <h2>Mapeo de Parámetros</h2>
+    <h2 id="mapeo">3. Mapeo de Parámetros</h2>
     <p>
-      El mapeo conecta las columnas de tu fuente de datos con los parámetros de Tableau:
+      El mapeo conecta las columnas de tu fuente de datos con los parámetros de Tableau.
+      Para cada mapeo debes definir:
     </p>
     
     <div class="config-option">
-      <strong>Columna de Datos</strong>
-      <p>La columna en tu fuente de datos que contiene el valor (Ej: <code>ROL</code>, <code>REGION</code>)</p>
+      <strong>🔗 Columna de Datos</strong>
+      <p>La columna en tu fuente de datos que contiene el valor.</p>
+      <p><em>Ejemplos:</em> <code>ROL</code>, <code>REGION</code>, <code>PAIS</code></p>
     </div>
     
     <div class="config-option">
-      <strong>Parámetro de Tableau</strong>
-      <p>El parámetro de Tableau que recibirá el valor (Ej: <code>RolParametro</code>, <code>RegionParametro</code>)</p>
+      <strong>🔗 Parámetro de Tableau</strong>
+      <p>El parámetro de Tableau que recibirá el valor de esa columna.</p>
+      <p><em>Ejemplos:</em> <code>RolParametro</code>, <code>RegionParametro</code>, <code>PaisParametro</code></p>
     </div>
     
     <div class="note">
-      <strong>💡 Consejo:</strong> Puedes agregar múltiples mapeos para configurar varios parámetros a la vez.
-      Usa el botón "+ Agregar Mapeo" para añadir más conexiones.
+      <strong>⚠️ Importante:</strong> El primer mapeo es especial. El valor de ese parámetro se usará como 
+      "Status" en el tracking cuando el acceso sea exitoso. Por ejemplo, si mapeas ROL → RolParametro, 
+      el valor del rol se guardará en los logs.
     </div>
     
-    <h2>Importar/Exportar Configuración</h2>
+    <h2 id="comportamiento">4. Comportamiento</h2>
+    
+    <div class="config-option">
+      <strong>⚙️ Ocultar extensión después de cargar parámetros</strong>
+      <p>
+        Si activas esta opción, la extensión se ocultará automáticamente una vez que los parámetros se carguen exitosamente.
+        Esto mejora la experiencia del usuario final al no mostrar la interfaz de carga.
+      </p>
+      <p><strong>Nota:</strong> En modo editor, siempre podrás acceder a la configuración desde el botón de engranaje.</p>
+    </div>
+    
+    <h2 id="error">5. Mensaje de Error</h2>
+    
+    <div class="config-option error">
+      <strong>⚠️ Mensaje personalizado</strong>
+      <p>
+        Define el mensaje que verán los usuarios cuando no se encuentren sus datos o no tengan un rol asignado.
+      </p>
+      <p><em>Ejemplo:</em> "No se encontró tu usuario. Por favor contacta a soporte."</p>
+    </div>
+    
+    <div class="config-option error">
+      <strong>⚠️ URL del enlace</strong>
+      <p>
+        URL a la que se redirigirá al usuario cuando haga click en el enlace del mensaje de error.
+      </p>
+      <p><em>Ejemplo:</em> <code>https://miempresa.atlassian.net/servicedesk/customer/portal/123</code></p>
+    </div>
+    
+    <div class="config-option error">
+      <strong>⚠️ Texto del enlace</strong>
+      <p>
+        El texto que se mostrará como enlace clickeable. Si lo dejas vacío, se mostrará la URL completa.
+      </p>
+      <p><em>Ejemplos:</em> "Click Aquí", "Crear Ticket", "Contactar Soporte"</p>
+    </div>
+    
+    <h2 id="tracking">6. Tracking de Accesos</h2>
+    
+    <div class="config-option tracking">
+      <strong>📈 URL del Script de Tracking</strong>
+      <p>
+        URL de tu Google Apps Script que registra los accesos en un Google Sheet.
+        Deja vacío para desactivar el tracking.
+      </p>
+      <p><em>Ejemplo:</em> <code>https://script.google.com/macros/s/AKfycb.../exec</code></p>
+    </div>
+    
+    <div class="tip">
+      <strong>💡 Cómo crear el script de tracking:</strong>
+      <ol style="margin-left: 20px; margin-top: 10px;">
+        <li>Crea un Google Sheet con las columnas: <code>EMAIL</code>, <code>DATE</code>, <code>DASHBOARD</code>, <code>STATUS</code></li>
+        <li>Ve a <strong>Extensiones → Apps Script</strong></li>
+        <li>Pega este código:
+          <pre style="background: #1f2937; color: #e5e7eb; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 12px; overflow-x: auto;">
+function doGet(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  sheet.appendRow([
+    e.parameter.Email,
+    e.parameter.Horario,
+    e.parameter.Dashboard,
+    e.parameter.Status
+  ]);
+  return ContentService.createTextOutput("OK");
+}</pre>
+        </li>
+        <li>Implementa como "Aplicación web" con acceso "Cualquier persona"</li>
+        <li>Copia la URL y pégala en la configuración</li>
+      </ol>
+    </div>
+    
+    <h2 id="importar">7. Importar/Exportar Configuración</h2>
     
     <h3>Importar desde CSV</h3>
     <p>
@@ -234,23 +398,24 @@
     
     <h3>Exportar como CSV</h3>
     <p>
-      Usa el botón "📋 Copiar Configuración como CSV" para copiar tu configuración actual al portapapeles.
+      Usa el botón "📋 Exportar CSV" para copiar tu configuración actual al portapapeles.
       Esto es útil para respaldar o compartir tu configuración con otros dashboards.
     </p>
     
-    <h2>Modo Editor vs Modo Visualización</h2>
-    <ul>
-      <li><strong>Modo Editor:</strong> La extensión muestra logs detallados y siempre permite acceder a la configuración</li>
-      <li><strong>Modo Visualización:</strong> La extensión muestra solo mensajes esenciales al usuario final</li>
-    </ul>
-    
-    <h2>Solución de Problemas</h2>
+    <h2 id="problemas">Solución de Problemas</h2>
     
     <h3>La extensión no carga mis parámetros</h3>
     <ul>
       <li>Verifica que la fuente de datos esté correctamente conectada en el worksheet seleccionado</li>
       <li>Confirma que los nombres de las columnas y parámetros sean exactos (distinguen mayúsculas/minúsculas)</li>
-      <li>Revisa los logs en modo editor para ver mensajes de error específicos</li>
+      <li>Revisa los logs en la consola del navegador (F12) para ver mensajes de error específicos</li>
+    </ul>
+    
+    <h3>El tracking no registra el email del usuario</h3>
+    <ul>
+      <li>Asegúrate de haber creado el parámetro con <code>USERNAME()</code> como valor por defecto</li>
+      <li>Selecciona ese parámetro en "Parámetro de Usuario en Tableau"</li>
+      <li>Verifica que el script de Google tenga permisos de "Cualquier persona"</li>
     </ul>
     
     <h3>La extensión no se oculta después de cargar</h3>
@@ -268,9 +433,9 @@
     
     <div class="credits">
       <p><strong>Extensión creada por</strong></p>
-      <p>Andrés Canido</p>
+      <p style="font-size: 20px; color: #374151; margin: 10px 0;">Andrés Canido</p>
       <p><a href="mailto:andres.canido@mercadolibre.com">andres.canido@mercadolibre.com</a></p>
-      <p style="margin-top: 10px; font-size: 14px; color: #9ca3af;">
+      <p style="margin-top: 15px; font-size: 14px; color: #9ca3af;">
         © 2025 - Auto Parámetros para Tableau
       </p>
     </div>

@@ -104,6 +104,18 @@ async function loadAvailableData() {
       "[v0] Parámetros disponibles:",
       availableParameters.map((p) => p.name),
     )
+
+    // Llenar el dropdown de parámetro de usuario
+    const usernameParameterSelect = document.getElementById("usernameParameter")
+    usernameParameterSelect.innerHTML = '<option value="">Seleccionar parámetro...</option>'
+
+    availableParameters.forEach((param) => {
+      const option = document.createElement("option")
+      option.value = param.name
+      option.textContent = param.name
+      usernameParameterSelect.appendChild(option)
+    })
+    // Fin de llenar dropdown
   } catch (error) {
     console.error("[v0] Error cargando datos:", error)
     alert("Error al cargar datos: " + error.message)
@@ -294,7 +306,11 @@ function loadCurrentConfiguration() {
           document.getElementById("errorUrl").value = savedErrorUrl
           document.getElementById("errorLinkText").value = savedErrorLinkText
           document.getElementById("trackingUrl").value = savedTrackingUrl
-          document.getElementById("usernameParameter").value = savedUsernameParameter
+
+          if (savedUsernameParameter) {
+            document.getElementById("usernameParameter").value = savedUsernameParameter
+            console.log("[v0] Parámetro usuario restaurado:", savedUsernameParameter)
+          }
 
           // Renderizar mapeos
           const container = document.getElementById("mappingsContainer")
