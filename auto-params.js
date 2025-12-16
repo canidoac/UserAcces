@@ -710,7 +710,7 @@ const initExtension = () => {
   addLog("Iniciando extensión...", "info")
 
   tableau.extensions
-    .initializeAsync()
+    .initializeAsync({ configure: openConfigDialog })
     .then(() => {
       addLog("API de Tableau inicializada", "success")
 
@@ -772,4 +772,9 @@ function startAutoConfiguration() {
     addLog("Error no capturado: " + error, "error")
     showError("Error inesperado: " + error.message)
   })
+}
+
+// Función para abrir el diálogo de configuración
+function openConfigDialog() {
+  configure()
 }
