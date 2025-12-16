@@ -267,29 +267,64 @@
     <h2 id="identificacion">2. Identificación de Usuario (Tracking)</h2>
     
     <div class="config-option user">
-      <strong>👤 Nombre del Dashboard</strong>
+      <strong>Nombre del Dashboard</strong>
       <p>Define un nombre para identificar este dashboard en los logs de tracking.</p>
       <p><em>Ejemplo:</em> "Dashboard de Ventas", "Reporte Financiero Q4"</p>
     </div>
     
     <div class="config-option user">
-      <strong>👤 Parámetro de Usuario en Tableau</strong>
+      <strong>Parámetro de Usuario en Tableau</strong>
       <p>
         Selecciona el parámetro de Tableau que contiene el email del usuario actual.
-        Este parámetro debe tener como valor por defecto la función <code>USERNAME()</code>.
+        Este parámetro debe actualizarse automáticamente con una acción de parámetro.
       </p>
     </div>
     
     <div class="tip">
-      <strong>💡 Cómo crear el parámetro de usuario:</strong>
-      <ol style="margin-left: 20px; margin-top: 10px;">
-        <li>En Tableau Desktop, ve a <strong>Datos → Crear Parámetro</strong></li>
-        <li>Nombre: <code>CurrentUser</code> (o el nombre que prefieras)</li>
-        <li>Tipo de datos: <strong>Cadena</strong></li>
-        <li>Valor actual: escribe <code>USERNAME()</code></li>
-        <li>Guarda el parámetro</li>
+      <strong>Cómo crear el parámetro de usuario (3 pasos):</strong>
+      
+      <p style="margin-top: 15px; font-weight: 600; color: #065f46;">Paso 1: Crear Campo Calculado</p>
+      <ol style="margin-left: 20px; margin-top: 5px;">
+        <li>En Tableau Desktop, clic derecho en el panel de Datos</li>
+        <li>Selecciona <strong>Crear Campo Calculado</strong></li>
+        <li>Nombre: <code>UsuarioActual</code></li>
+        <li>Fórmula: <code>USERNAME()</code></li>
+        <li>Clic en <strong>Aceptar</strong></li>
       </ol>
-      <p style="margin-top: 10px;">Este parámetro capturará automáticamente el email del usuario logueado en Tableau Server/Online.</p>
+      
+      <p style="margin-top: 15px; font-weight: 600; color: #065f46;">Paso 2: Crear Parámetro</p>
+      <ol style="margin-left: 20px; margin-top: 5px;">
+        <li>Ve a <strong>Análisis → Crear Parámetro</strong></li>
+        <li>Nombre: <code>CurrentUser</code></li>
+        <li>Tipo de datos: <strong>Cadena</strong></li>
+        <li>Valor actual: déjalo vacío o pon un valor por defecto</li>
+        <li>Clic en <strong>Aceptar</strong></li>
+      </ol>
+      
+      <p style="margin-top: 15px; font-weight: 600; color: #065f46;">Paso 3: Crear Acción de Parámetro</p>
+      <ol style="margin-left: 20px; margin-top: 5px;">
+        <li>Ve a <strong>Dashboard → Acciones</strong></li>
+        <li>Clic en <strong>Agregar Acción → Cambiar parámetro</strong></li>
+        <li>Nombre: <code>Cargar Usuario</code></li>
+        <li>Hoja de origen: selecciona cualquier hoja del dashboard</li>
+        <li>Ejecutar acción en: <strong>Seleccionar</strong> o <strong>Menú</strong></li>
+        <li>Parámetro de destino: <code>CurrentUser</code></li>
+        <li>Campo de origen: <code>UsuarioActual</code> (el campo calculado del Paso 1)</li>
+        <li>Clic en <strong>Aceptar</strong></li>
+      </ol>
+      
+      <p style="margin-top: 10px; background: #fef3c7; padding: 10px; border-radius: 4px;">
+        <strong>Nota importante:</strong> Para que el parámetro se cargue automáticamente al abrir el libro,
+        necesitas que haya una marca seleccionada por defecto. Puedes usar una hoja auxiliar oculta con una sola
+        marca que esté siempre seleccionada, o configurar la acción en "Menú" y que los usuarios hagan clic
+        en cualquier elemento del dashboard.
+      </p>
+      
+      <p style="margin-top: 10px; background: #dbeafe; padding: 10px; border-radius: 4px;">
+        <strong>Alternativa más simple:</strong> Si prefieres no usar acciones, puedes agregar el campo calculado
+        <code>UsuarioActual</code> directamente a tu tabla de datos de usuarios (Hyper) y configurarlo como la
+        columna de Username en esta extensión. Así el filtro se hará automáticamente.
+      </p>
     </div>
     
     <h2 id="mapeo">3. Mapeo de Parámetros</h2>
@@ -413,7 +448,8 @@ function doGet(e) {
     
     <h3>El tracking no registra el email del usuario</h3>
     <ul>
-      <li>Asegúrate de haber creado el parámetro con <code>USERNAME()</code> como valor por defecto</li>
+      <li>Asegúrate de haber creado el campo calculado con <code>USERNAME()</code></li>
+      <li>Configura correctamente la acción de parámetro para actualizar el parámetro</li>
       <li>Selecciona ese parámetro en "Parámetro de Usuario en Tableau"</li>
       <li>Verifica que el script de Google tenga permisos de "Cualquier persona"</li>
     </ul>
