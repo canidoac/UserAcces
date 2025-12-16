@@ -124,9 +124,13 @@ async function sendTracking(userEmail, status) {
       } catch (e) {}
     }
 
+    const now = new Date()
+    const argentinaTime = new Date(now.getTime() - 3 * 60 * 60 * 1000)
+    const horarioArgentina = argentinaTime.toISOString().replace("Z", "-03:00")
+
     const trackingData = {
       Email: finalEmail,
-      Horario: new Date().toISOString(),
+      Horario: horarioArgentina,
       Dashboard: dashboardName,
       Status: status,
     }
