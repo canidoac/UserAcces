@@ -153,93 +153,28 @@ async function sendErrorTracking(status = "Sin Acceso") {
   sendTracking("Desconocido", status)
 }
 
-// Inicializar extensión
-log("Iniciando inicialización de extensión...")
-
-const contextMenuCallbacks = {
-  configure: () => {
-    configure()
-  },
-}
-
-tableau.extensions.initializeAsync({ configure: contextMenuCallbacks.configure }).then(
-  () => {
-    startTime = Date.now()
-    log("Extensión inicializada correctamente", "success")
-
-    const editorMode = isEditorMode()
-
-    document.body.classList.add("visible")
-
-    if (editorMode) {
-      document.body.classList.add("editor-mode")
-      log("Modo editor: extensión 10x10px en esquina superior izquierda")
-    } else {
-      document.body.classList.add("view-mode")
-      log("Modo visualización: extensión pantalla completa")
-    }
-
-    logContainer.style.display = editorMode ? "block" : "none"
-
-    // En modo editor, SIEMPRE mostrar el botón de configuración
-    if (editorMode) {
-      configureBtn.style.display = "inline-flex"
-      configureBtn.onclick = configure
-    } else {
-      configureBtn.style.display = "none"
-    }
-
-    try {
-      const hasConfig = loadConfiguration()
-
-      log("¿Tiene configuración? " + hasConfig)
-
-      // Si no hay configuración, mostrar mensaje
-      if (!hasConfig) {
-        log("No hay configuración, esperando configuración del usuario")
-        showConfigureButton()
-        return
-      }
-
-      // Si hay configuración, ejecutar carga automática
-      log("Configuración encontrada, iniciando carga automática")
-      autoLoadParameters().catch((error) => {
-        log("Error no capturado: " + error, "error")
-        showError("Error inesperado: " + error.message)
-      })
-    } catch (error) {
-      log("Error en proceso de inicialización: " + error, "error")
-      showError("Error al procesar configuración: " + error.message)
-    }
-  },
-  (error) => {
-    log("Error al inicializar: " + error, "error")
-    showError("Error al inicializar extensión: " + error.toString())
-  },
-)
-
 // ============================
 // Función principal (auto load)
 // ============================
 async function autoLoadParameters() {
   try {
-    const startTime = Date.now()
-    log("Iniciando carga automática de parámetros...")
+    const startTime = performance.now()
+    addLog("Iniciando carga automática de parámetros...", "info")
 
     const userData = await getFilteredUserData()
 
     if (!userData) {
       const errorMsg = CONFIG.errorMessage || "No se pudo obtener tus datos. Por favor, contacta con soporte."
-      log("No se encontraron datos del usuario", "error")
+      addLog("No se encontraron datos del usuario", "error")
       showError(errorMsg, "Desconocido")
       return
     }
 
     currentUserData = userData
     currentUserEmail = userData[CONFIG.usernameColumn] || "Desconocido"
-    log(`Email del usuario: ${currentUserEmail}`)
+    addLog(`Email del usuario: ${currentUserEmail}`)
 
-    log("Datos cargados correctamente para tu usuario")
+    addLog("Datos cargados correctamente para tu usuario")
 
     const feedResults = await feedParameters(userData)
 
@@ -247,7 +182,7 @@ async function autoLoadParameters() {
 
     if (successCount === 0) {
       const errorMsg = CONFIG.errorMessage || "No se pudo actualizar ningún parámetro. Contacta con soporte."
-      log("No se actualizó ningún parámetro", "error")
+      addLog("No se actualizó ningún parámetro", "error")
       showError(errorMsg, currentUserEmail)
       return
     }
@@ -263,12 +198,12 @@ async function autoLoadParameters() {
       firstParamValue.toString().toUpperCase() === "NULL"
     ) {
       const errorMsg = CONFIG.errorMessage || "No tienes un rol asignado. Contacta con soporte."
-      log("Usuario sin rol válido (NULL, vacío o NO_ROLE), mostrando error")
+      addLog("Usuario sin rol válido (NULL, vacío o NO_ROLE), mostrando error")
       showError(errorMsg, currentUserEmail)
       return
     }
 
-    const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2)
+    const elapsedTime = ((performance.now() - startTime) / 1000).toFixed(2)
 
     const paramsList = CONFIG.parameterMappings
       .map((m) => `${m.parameterName}: ${userData[m.columnName] || "N/A"}`)
@@ -281,7 +216,7 @@ async function autoLoadParameters() {
       currentUserEmail,
     )
   } catch (error) {
-    log("Error en autoLoadParameters: " + error, "error")
+    addLog("Error en autoLoadParameters: " + error, "error")
     const errorMsg = CONFIG.errorMessage || `Error al cargar parámetros: ${error.message}`
     showError(errorMsg, currentUserEmail)
   }
@@ -293,25 +228,25 @@ async function autoLoadParameters() {
 async function getDataSource(dataSourceName) {
   try {
     const dashboard = tableau.extensions.dashboardContent.dashboard
-    log("Dashboard obtenido, worksheets: " + dashboard.worksheets.length)
+    addLog("Dashboard obtenido, worksheets: " + dashboard.worksheets.length)
 
     // Buscar en todos los worksheets
     for (const worksheet of dashboard.worksheets) {
-      log("Buscando en worksheet: " + worksheet.name)
+      addLog("Buscando en worksheet: " + worksheet.name)
       const dataSources = await worksheet.getDataSourcesAsync()
-      log("Fuentes de datos encontradas: " + dataSources.map((ds) => ds.name).join(", "))
+      addLog("Fuentes de datos encontradas: " + dataSources.map((ds) => ds.name).join(", "))
 
       const found = dataSources.find((ds) => ds.name === dataSourceName)
       if (found) {
-        log("Fuente de datos encontrada!")
+        addLog("Fuente de datos encontrada!")
         return found
       }
     }
 
-    log("Fuente de datos no encontrada")
+    addLog("Fuente de datos no encontrada")
     return null
   } catch (error) {
-    log("Error en getDataSource: " + error, "error")
+    addLog("Error en getDataSource: " + error, "error")
     throw error
   }
 }
@@ -321,10 +256,10 @@ async function getDataSource(dataSourceName) {
 // ============================
 async function getFilteredUserData() {
   try {
-    log("Obteniendo datos de la fuente...")
+    addLog("Obteniendo datos de la fuente...")
 
     if (TESTING_MODE) {
-      log("MODO TESTING ACTIVADO - Buscando email: " + TEST_EMAIL, "warning")
+      addLog("MODO TESTING ACTIVADO - Buscando email: " + TEST_EMAIL, "warning")
     }
 
     const dashboard = tableau.extensions.dashboardContent.dashboard
@@ -336,23 +271,23 @@ async function getFilteredUserData() {
       worksheet = dashboard.worksheets.find((ws) => ws.name === CONFIG.worksheetName)
 
       if (worksheet) {
-        log(`Usando worksheet configurado: ${CONFIG.worksheetName}`)
+        addLog(`Usando worksheet configurado: ${CONFIG.worksheetName}`)
       } else {
         throw new Error(`No se encontró el worksheet configurado: ${CONFIG.worksheetName}`)
       }
     } else {
       // Fallback: buscar en todos los worksheets (comportamiento anterior)
-      log("No hay worksheet configurado, buscando en todos los worksheets...")
+      addLog("No hay worksheet configurado, buscando en todos los worksheets...")
       const worksheets = dashboard.worksheets
 
       for (const ws of worksheets) {
-        log("Buscando en worksheet: " + ws.name)
+        addLog("Buscando en worksheet: " + ws.name)
         const dataSources = await ws.getDataSourcesAsync()
-        log("Fuentes de datos encontradas: " + dataSources.map((ds) => ds.name).join(", "))
+        addLog("Fuentes de datos encontradas: " + dataSources.map((ds) => ds.name).join(", "))
 
         if (dataSources.some((ds) => ds.name === CONFIG.dataSourceName)) {
           worksheet = ws
-          log("Worksheet encontrado: " + ws.name)
+          addLog("Worksheet encontrado: " + ws.name)
           break
         }
       }
@@ -362,7 +297,7 @@ async function getFilteredUserData() {
       throw new Error("No se encontró un worksheet que use la fuente de datos configurada")
     }
 
-    log("Leyendo datos del worksheet: " + worksheet.name)
+    addLog("Leyendo datos del worksheet: " + worksheet.name)
 
     const maxRows = TESTING_MODE ? 100 : 10
 
@@ -371,7 +306,7 @@ async function getFilteredUserData() {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        log(`Intento ${attempt}/${maxRetries} de cargar datos...`)
+        addLog(`Intento ${attempt}/${maxRetries} de cargar datos...`)
 
         const dataPromise = worksheet.getSummaryDataAsync({
           maxRows: maxRows,
@@ -385,14 +320,14 @@ async function getFilteredUserData() {
         dataTable = await Promise.race([dataPromise, timeoutPromise])
 
         if (dataTable && dataTable.data.length > 0) {
-          log("Datos cargados exitosamente")
+          addLog("Datos cargados exitosamente")
           break
         } else if (attempt < maxRetries) {
-          log("No se obtuvieron datos, esperando 2 segundos...", "warning")
+          addLog("No se obtuvieron datos, esperando 2 segundos...", "warning")
           await new Promise((resolve) => setTimeout(resolve, 2000))
         }
       } catch (error) {
-        log(`Error en intento ${attempt}: ${error}`, "error")
+        addLog(`Error en intento ${attempt}: ${error}`, "error")
         if (attempt === maxRetries) {
           throw new Error(`No se pudieron cargar los datos después de ${maxRetries} intentos`)
         }
@@ -404,7 +339,7 @@ async function getFilteredUserData() {
       throw new Error("No se encontraron datos")
     }
 
-    log("Filas obtenidas: " + dataTable.data.length, "success")
+    addLog("Filas obtenidas: " + dataTable.data.length, "success")
 
     let targetRow = dataTable.data[0]
 
@@ -412,7 +347,7 @@ async function getFilteredUserData() {
       const emailColumnIndex = dataTable.columns.findIndex((col) => col.fieldName === CONFIG.usernameColumn)
 
       if (emailColumnIndex === -1) {
-        log(`No se encontró la columna ${CONFIG.usernameColumn}`, "error")
+        addLog(`No se encontró la columna ${CONFIG.usernameColumn}`, "error")
         throw new Error(`Columna ${CONFIG.usernameColumn} no existe`)
       }
 
@@ -423,9 +358,9 @@ async function getFilteredUserData() {
 
       if (foundRow) {
         targetRow = foundRow
-        log(`Usuario encontrado: ${TEST_EMAIL}`, "success")
+        addLog(`Usuario encontrado: ${TEST_EMAIL}`, "success")
       } else {
-        log(`Email ${TEST_EMAIL} no encontrado`, "error")
+        addLog(`Email ${TEST_EMAIL} no encontrado`, "error")
         return null
       }
     }
@@ -438,11 +373,11 @@ async function getFilteredUserData() {
       userData[fieldName] = value
     })
 
-    log("Datos cargados correctamente", "success")
+    addLog("Datos cargados correctamente", "success")
 
     return userData
   } catch (error) {
-    log("Error al obtener datos filtrados: " + error, "error")
+    addLog("Error al obtener datos filtrados: " + error, "error")
     throw error
   }
 }
@@ -454,38 +389,38 @@ async function feedParameters(userData) {
     const dashboard = tableau.extensions.dashboardContent.dashboard
     const feedResults = []
 
-    log(`Alimentando ${CONFIG.parameterMappings.length} parámetros...`)
+    addLog(`Alimentando ${CONFIG.parameterMappings.length} parámetros...`)
 
     for (const mapping of CONFIG.parameterMappings) {
       const paramName = mapping.parameterName
       const columnName = mapping.columnName
 
-      log(`Procesando parámetro: ${paramName} con columna: ${columnName}`)
+      addLog(`Procesando parámetro: ${paramName} con columna: ${columnName}`)
 
       const value = userData[columnName]
 
       if (value === undefined || value === null) {
-        log(`No se encontró valor para la columna: ${columnName}`, "warning")
+        addLog(`No se encontró valor para la columna: ${columnName}`, "warning")
         feedResults.push({ parameter: paramName, value: null, success: false, error: "Valor no encontrado" })
         continue
       }
 
       try {
-        log(`Buscando parámetro en dashboard: ${paramName}`)
+        addLog(`Buscando parámetro en dashboard: ${paramName}`)
 
         const parameter = await dashboard.findParameterAsync(paramName)
 
-        log(`Parámetro encontrado. Valor actual: ${parameter.currentValue.value}`)
-        log(`Cambiando a: ${value}`)
+        addLog(`Parámetro encontrado. Valor actual: ${parameter.currentValue.value}`)
+        addLog(`Cambiando a: ${value}`)
 
         const stringValue = value.toString()
 
         await parameter.changeValueAsync(stringValue)
 
-        log(`✓ Parámetro actualizado: ${paramName} = ${value}`, "success")
+        addLog(`✓ Parámetro actualizado: ${paramName} = ${value}`, "success")
         feedResults.push({ parameter: paramName, value, success: true })
       } catch (error) {
-        log(`✗ Error al actualizar parámetro ${paramName}: ${error}`, "error")
+        addLog(`✗ Error al actualizar parámetro ${paramName}: ${error}`, "error")
         feedResults.push({ parameter: paramName, value, success: false, error: error.message })
       }
     }
@@ -493,13 +428,13 @@ async function feedParameters(userData) {
     const successCount = feedResults.filter((r) => r.success).length
     const totalCount = feedResults.length
 
-    log(`Resultado: ${successCount} de ${totalCount} parámetros actualizados exitosamente`)
+    addLog(`Resultado: ${successCount} de ${totalCount} parámetros actualizados exitosamente`)
 
     feedResults.forEach((result) => {
       if (result.success) {
-        log(`  ✓ ${result.parameter}: ${result.value}`, "success")
+        addLog(`  ✓ ${result.parameter}: ${result.value}`, "success")
       } else {
-        log(`  ✗ ${result.parameter}: ${result.error}`, "error")
+        addLog(`  ✗ ${result.parameter}: ${result.error}`, "error")
       }
     })
 
@@ -508,12 +443,12 @@ async function feedParameters(userData) {
     }
 
     if (successCount < totalCount) {
-      log(`Advertencia: Solo se actualizaron ${successCount} de ${totalCount} parámetros`, "warning")
+      addLog(`Advertencia: Solo se actualizaron ${successCount} de ${totalCount} parámetros`, "warning")
     }
 
     return feedResults
   } catch (error) {
-    log("Error al alimentar parámetros: " + error, "error")
+    addLog("Error al alimentar parámetros: " + error, "error")
     throw error
   }
 }
@@ -522,9 +457,9 @@ async function feedParameters(userData) {
 // Configuración de la extensión
 // =========================
 function configure() {
-  log("Abriendo diálogo de configuración...")
+  addLog("Abriendo diálogo de configuración...")
   const popupUrl = window.location.href.replace("index.html", "config.html")
-  log("URL de configuración: " + popupUrl)
+  addLog("URL de configuración: " + popupUrl)
 
   tableau.extensions.ui
     .displayDialogAsync(popupUrl, "", {
@@ -532,16 +467,16 @@ function configure() {
       width: 700,
     })
     .then((closePayload) => {
-      log("Configuración guardada, recargando...", "success")
+      addLog("Configuración guardada, recargando...", "success")
       setTimeout(() => {
         window.location.reload()
       }, 500)
     })
     .catch((error) => {
       if (error.toString().includes("canceled")) {
-        log("Usuario canceló la configuración", "warning")
+        addLog("Usuario canceló la configuración", "warning")
       } else {
-        log("Error en configuración: " + error, "error")
+        addLog("Error en configuración: " + error, "error")
       }
     })
 }
@@ -579,11 +514,15 @@ async function loadConfiguration() {
 // =========================
 // Mostrar botón de configuración
 // =========================
+function showWarning(title, subtitle) {
+  updateStatus(title, subtitle, "warning", null, isEditorMode())
+}
+
 function showConfigureButton() {
-  updateStatus("warning", "Configuración Requerida", "warning", "Debes configurar la extensión", isEditorMode())
+  showWarning("Configuración Requerida", "Debes configurar la extensión")
 
   if (isEditorMode()) {
-    configureBtn.style.display = "inline-flex"
+    configureBtn.style.display = "flex"
     configureBtn.onclick = configure
   } else {
     configureBtn.style.display = "none"
@@ -595,12 +534,6 @@ function showConfigureButton() {
 // Actualizar estado visual
 // =========================
 function updateStatus(title, subtitle, status = "loading", message = null, isEditorMode = false) {
-  const statusIcon = document.getElementById("statusIcon")
-  const statusTitle = document.getElementById("statusTitle")
-  const statusSubtitle = document.getElementById("statusSubtitle")
-  const messageBox = document.getElementById("messageBox")
-  const messageText = document.getElementById("messageText")
-
   statusTitle.textContent = title
   statusSubtitle.textContent = subtitle
 
@@ -631,9 +564,8 @@ function updateStatus(title, subtitle, status = "loading", message = null, isEdi
   }
 
   // Mostrar botón de configurar solo en modo editor
-  const configureBtn = document.getElementById("configureBtn")
   if (isEditorMode && status === "error") {
-    configureBtn.style.display = "inline-flex"
+    configureBtn.style.display = "flex"
   } else {
     configureBtn.style.display = "none"
   }
@@ -694,20 +626,20 @@ function showSuccess(title, subtitle, roleValue, userEmail = "Desconocido") {
     roleValue.toString().toUpperCase() !== "NO_ROLE"
 
   if (shouldHide) {
-    log("Extensión configurada correctamente, ocultando...", "success")
+    addLog("Extensión configurada correctamente, ocultando...", "success")
     hideExtension()
     return
   }
 
   // Si no se oculta, mostrar mensaje de éxito
   updateStatus(`Hola ${roleValue}`, subtitle, "success", null, isEditorMode())
-  log("Éxito: " + title, "success")
+  addLog("Éxito: " + title, "success")
 }
 
 function hideExtension() {
   const editorMode = isEditorMode()
 
-  log(`Ocultando extensión (Modo: ${editorMode ? "Editor" : "Visualización"})`)
+  addLog(`Ocultando extensión (Modo: ${editorMode ? "Editor" : "Visualización"})`)
 
   document.body.classList.remove("visible")
   document.body.classList.add("hidden")
@@ -716,10 +648,10 @@ function hideExtension() {
     tableau.extensions
       .setClickThroughAsync(true)
       .then(() => {
-        log("Click-through habilitado correctamente")
+        addLog("Click-through habilitado correctamente")
       })
       .catch((error) => {
-        log("Error al habilitar click-through: " + error.message)
+        addLog("Error al habilitar click-through: " + error.message)
       })
   }
 
@@ -736,7 +668,7 @@ function hideExtension() {
     configButton.style.opacity = "1"
     configButton.style.pointerEvents = "auto"
     configButton.style.visibility = "visible"
-    log("Botón de configuración mantenido visible en modo editor")
+    addLog("Botón de configuración mantenido visible en modo editor")
   }
 }
 
@@ -755,4 +687,89 @@ function logMessage(message, type = "info", isEditorMode = false) {
     console.log(`[v0] ${message}`)
   }
   addLog(message, type)
+}
+
+// ============================
+// Funciones adicionales para la inicialización optimizada
+// ============================
+
+const replaceSpinnerWhenReady = () => {
+  const cssSpinner = document.getElementById("cssSpinner")
+  if (cssSpinner && document.fonts) {
+    document.fonts.ready.then(() => {
+      cssSpinner.outerHTML = '<span class="material-symbols-outlined spinning">progress_activity</span>'
+    })
+  }
+}
+
+const initExtension = () => {
+  // Reemplazar spinner cuando la fuente esté lista
+  replaceSpinnerWhenReady()
+
+  startTime = performance.now()
+  addLog("Iniciando extensión...", "info")
+
+  tableau.extensions
+    .initializeAsync()
+    .then(() => {
+      addLog("API de Tableau inicializada", "success")
+
+      if (isEditorMode()) {
+        configureBtn.style.display = "flex"
+        logContainer.style.display = "block"
+        addLog("Modo editor detectado - Logs visibles", "info")
+      }
+
+      loadConfiguration().then(() => {
+        if (CONFIG.worksheetName && CONFIG.dataSourceName && CONFIG.usernameColumn) {
+          startAutoConfiguration()
+        } else {
+          if (isEditorMode()) {
+            showWarning("Configuración requerida", "Por favor, configure la extensión para continuar")
+          } else {
+            showError(
+              "Error",
+              "La extensión no está configurada correctamente. Contacte al administrador del dashboard.",
+            )
+          }
+        }
+      })
+    })
+    .catch((err) => {
+      console.error("[v0] Error al inicializar:", err)
+      showError("Error de conexión", err.message || "No se pudo conectar con Tableau")
+    })
+}
+;(() => {
+  // Mostrar pantalla de carga inmediatamente
+  document.body.classList.add("visible")
+})()
+
+if (window.tableau && window.tableau.extensions) {
+  initExtension()
+} else {
+  // Esperar a que Tableau esté disponible
+  const checkTableau = setInterval(() => {
+    if (window.tableau && window.tableau.extensions) {
+      clearInterval(checkTableau)
+      initExtension()
+    }
+  }, 10)
+
+  // Timeout de seguridad
+  setTimeout(() => {
+    clearInterval(checkTableau)
+    if (!window.tableau || !window.tableau.extensions) {
+      document.getElementById("statusTitle").textContent = "Error de API"
+      document.getElementById("statusSubtitle").textContent = "La API de Tableau no se cargó correctamente"
+    }
+  }, 5000)
+}
+
+// Función para iniciar la configuración automática
+function startAutoConfiguration() {
+  autoLoadParameters().catch((error) => {
+    addLog("Error no capturado: " + error, "error")
+    showError("Error inesperado: " + error.message)
+  })
 }
