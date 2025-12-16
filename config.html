@@ -128,6 +128,24 @@
     </div>
     <!-- Fin campo nombre dashboard -->
     
+    <!-- Agregando campo para parámetro de usuario de Tableau -->
+    <div class="form-group" style="background: #e0f2fe; border: 1px solid #0ea5e9; border-radius: 6px; padding: 15px; margin-bottom: 15px;">
+      <label for="usernameParameter" style="color: #0369a1; font-weight: 600;">
+        Nombre del Parámetro de Usuario en Tableau:
+      </label>
+      <input 
+        type="text" 
+        id="usernameParameter" 
+        placeholder="Ej: CurrentUser, UsuarioActual, pUsuario"
+        maxlength="100"
+      >
+      <p style="color: #0369a1; font-size: 12px; margin-top: 5px;">
+        <strong>Importante:</strong> Crea un parámetro en Tableau con valor por defecto <code>USERNAME()</code>. 
+        Esto capturará el email del usuario logueado para el tracking, incluso si no tiene acceso a los datos.
+      </p>
+    </div>
+    <!-- Fin campo parámetro de usuario -->
+    
     <!-- Agregando selección de worksheet primero -->
     <div class="form-group">
       <label for="worksheet">Worksheet (Hoja) de Datos:</label>

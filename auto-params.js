@@ -8,16 +8,17 @@ const TEST_EMAIL = "andres.canido@mercadolibre.com"
 
 // Configuración de la extensión
 const CONFIG = {
-  dataSourceName: "", // Nombre de la fuente de datos (se configura después)
   worksheetName: "", // Nombre del worksheet que contiene los datos
+  dataSourceName: "", // Nombre de la fuente de datos (se configura después)
   usernameColumn: "", // Columna que contiene el username
   parameterMappings: [], // Mapeo de columnas a parámetros
   hideAfterLoad: false,
   errorMessage: "",
   errorUrl: "",
   errorLinkText: "",
-  dashboardName: "", // Agregar dashboardName al CONFIG
   trackingUrl: "", // URL del script de tracking configurable
+  dashboardName: "", // Agregar dashboardName al CONFIG
+  usernameParameter: "", // Agregar parámetro de usuario de Tableau
 }
 
 // Variables de estado
@@ -58,6 +59,37 @@ const log = (message, type = "info") => {
   addLog(message, type)
 }
 
+async function getTableauUsername() {
+  try {
+    // Si hay un parámetro configurado, intentar leerlo
+    if (CONFIG.usernameParameter) {
+      const dashboard = tableau.extensions.dashboardContent.dashboard
+      const parameters = await dashboard.getParametersAsync()
+      const userParam = parameters.find((p) => p.name === CONFIG.usernameParameter)
+
+      if (userParam && userParam.currentValue && userParam.currentValue.value) {
+        const username = userParam.currentValue.value
+        console.log("[v0] Usuario obtenido del parámetro de Tableau:", username)
+        return username
+      }
+    }
+
+    // Fallback a environment
+    const env = tableau.extensions.environment
+    if (env.userName && env.userName.trim() !== "") {
+      return env.userName
+    }
+    if (env.userDisplayName && env.userDisplayName.trim() !== "") {
+      return env.userDisplayName
+    }
+
+    return null
+  } catch (error) {
+    console.error("[v0] Error obteniendo usuario de Tableau:", error)
+    return null
+  }
+}
+
 async function sendTracking(userEmail, status) {
   try {
     // Si no hay URL de tracking configurada, no enviar nada
@@ -66,44 +98,19 @@ async function sendTracking(userEmail, status) {
       return
     }
 
-    const env = tableau.extensions.environment
-
     console.log("[v0] ====== DEBUG TRACKING ======")
 
     let finalEmail = "Desconocido"
 
-    // 1. Primero intentar con el userEmail que viene del userData
-    if (userEmail && userEmail !== "Desconocido" && userEmail.trim() !== "") {
+    const tableauUsername = await getTableauUsername()
+    if (tableauUsername && tableauUsername.trim() !== "") {
+      finalEmail = tableauUsername
+      console.log("[v0] Usando usuario del parámetro de Tableau:", finalEmail)
+    }
+    // 2. Intentar con el userEmail que viene del userData
+    else if (userEmail && userEmail !== "Desconocido" && userEmail.trim() !== "") {
       finalEmail = userEmail
       console.log("[v0] Usando userEmail de userData:", finalEmail)
-    }
-    // 2. Intentar userName de Tableau (Tableau Server)
-    else if (env.userName && env.userName.trim() !== "") {
-      finalEmail = env.userName
-      console.log("[v0] Usando userName:", finalEmail)
-    }
-    // 3. Intentar userDisplayName de Tableau
-    else if (env.userDisplayName && env.userDisplayName.trim() !== "") {
-      finalEmail = env.userDisplayName
-      console.log("[v0] Usando userDisplayName:", finalEmail)
-    }
-    // 4. Extraer _uniqueUserId del JSON stringificado (propiedad privada)
-    else {
-      try {
-        const envString = JSON.stringify(env)
-        console.log("[v0] Environment stringificado para buscar _uniqueUserId")
-
-        const uniqueIdMatch = envString.match(/"_uniqueUserId":"([^"]+)"/)
-
-        if (uniqueIdMatch && uniqueIdMatch[1]) {
-          finalEmail = `user_${uniqueIdMatch[1].substring(0, 12)}`
-          console.log("[v0] Usando _uniqueUserId extraído:", finalEmail)
-        } else {
-          console.log("[v0] No se encontró _uniqueUserId en el JSON")
-        }
-      } catch (e) {
-        console.log("[v0] Error extrayendo _uniqueUserId:", e)
-      }
     }
 
     console.log("[v0] finalEmail final:", finalEmail)
@@ -130,10 +137,9 @@ async function sendTracking(userEmail, status) {
     const params = new URLSearchParams(trackingData).toString()
     const img = new Image()
     img.src = `${CONFIG.trackingUrl}?${params}`
-
-    console.log("[v0] Tracking enviado via Image beacon a:", CONFIG.trackingUrl)
+    console.log("[v0] Tracking enviado via Image beacon a:", img.src)
   } catch (error) {
-    console.error("[v0] Error enviando tracking:", error)
+    console.error("[v0] Error en tracking:", error)
   }
 }
 
@@ -539,38 +545,31 @@ function configure() {
 // =========================
 // Cargar configuración
 // =========================
-function loadConfiguration() {
-  try {
-    log("Cargando configuración...")
-    const settings = tableau.extensions.settings.getAll()
+async function loadConfiguration() {
+  const settings = tableau.extensions.settings.getAll()
+  console.log("[v0] Settings cargados:", settings)
 
-    log("Settings cargados: " + JSON.stringify(settings))
+  CONFIG.worksheetName = settings.worksheetName || ""
+  CONFIG.dataSourceName = settings.dataSourceName || ""
+  CONFIG.usernameColumn = settings.usernameColumn || ""
+  CONFIG.hideAfterLoad = settings.hideAfterLoad === "true" || settings.hideAfterLoad === true
+  CONFIG.errorMessage = settings.errorMessage || ""
+  CONFIG.errorUrl = settings.errorUrl || ""
+  CONFIG.errorLinkText = settings.errorLinkText || ""
+  CONFIG.trackingUrl = settings.trackingUrl || ""
+  CONFIG.dashboardName = settings.dashboardName || ""
+  CONFIG.usernameParameter = settings.usernameParameter || ""
 
-    if (settings.configured === "true") {
-      CONFIG.worksheetName = settings.worksheetName || ""
-      CONFIG.dataSourceName = settings.dataSourceName || ""
-      CONFIG.usernameColumn = settings.usernameColumn || ""
-      CONFIG.parameterMappings = settings.parameterMappings ? JSON.parse(settings.parameterMappings) : []
-      CONFIG.hideAfterLoad = settings.hideAfterLoad === "true"
-      CONFIG.errorMessage = settings.errorMessage || ""
-      CONFIG.errorUrl = settings.errorUrl || ""
-      CONFIG.errorLinkText = settings.errorLinkText || ""
-      CONFIG.dashboardName = settings.dashboardName || "" // Cargar dashboardName
-      CONFIG.trackingUrl = settings.trackingUrl || "" // Cargar trackingUrl
-
-      log("Configuración cargada correctamente")
-      log("hideAfterLoad: " + CONFIG.hideAfterLoad)
-      log("dashboardName: " + CONFIG.dashboardName)
-      log("trackingUrl: " + CONFIG.trackingUrl)
-      return true
-    } else {
-      log("No hay configuración guardada")
-      return false
+  if (settings.parameterMappings) {
+    try {
+      CONFIG.parameterMappings = JSON.parse(settings.parameterMappings)
+    } catch (e) {
+      console.error("[v0] Error parseando parameterMappings:", e)
+      CONFIG.parameterMappings = []
     }
-  } catch (error) {
-    log("Error cargando configuración: " + error, "error")
-    return false
   }
+
+  console.log("[v0] Configuración cargada:", CONFIG)
 }
 
 // =========================

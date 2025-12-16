@@ -242,6 +242,10 @@ function loadCurrentConfiguration() {
     document.getElementById("dashboardName").value = settings.dashboardName
   }
 
+  if (settings.usernameParameter) {
+    document.getElementById("usernameParameter").value = settings.usernameParameter
+  }
+
   if (settings.trackingUrl) {
     document.getElementById("trackingUrl").value = settings.trackingUrl
   }
@@ -265,6 +269,7 @@ function loadCurrentConfiguration() {
     const savedErrorUrl = settings.errorUrl || ""
     const savedErrorLinkText = settings.errorLinkText || ""
     const savedTrackingUrl = settings.trackingUrl || ""
+    const savedUsernameParameter = settings.usernameParameter || ""
 
     setTimeout(async () => {
       if (savedDataSourceName) {
@@ -289,6 +294,7 @@ function loadCurrentConfiguration() {
           document.getElementById("errorUrl").value = savedErrorUrl
           document.getElementById("errorLinkText").value = savedErrorLinkText
           document.getElementById("trackingUrl").value = savedTrackingUrl
+          document.getElementById("usernameParameter").value = savedUsernameParameter
 
           // Renderizar mapeos
           const container = document.getElementById("mappingsContainer")
@@ -367,6 +373,7 @@ function removeMapping(button) {
 
 function saveConfiguration() {
   const dashboardName = document.getElementById("dashboardName").value.trim()
+  const usernameParameter = document.getElementById("usernameParameter").value.trim()
   const worksheetName = document.getElementById("worksheet").value
   const dataSourceName = document.getElementById("dataSource").value
   const usernameColumn = document.getElementById("usernameColumn").value
@@ -378,6 +385,7 @@ function saveConfiguration() {
 
   console.log("[v0] === GUARDANDO CONFIGURACIÓN ===")
   console.log("[v0] Dashboard Name:", dashboardName)
+  console.log("[v0] Username Parameter:", usernameParameter)
   console.log("[v0] Worksheet:", worksheetName)
   console.log("[v0] Fuente de datos:", dataSourceName)
   console.log("[v0] Columna username:", usernameColumn)
@@ -417,6 +425,7 @@ function saveConfiguration() {
   const parentTableau = window.parent.tableau
 
   parentTableau.extensions.settings.set("dashboardName", dashboardName)
+  parentTableau.extensions.settings.set("usernameParameter", usernameParameter)
   parentTableau.extensions.settings.set("worksheetName", worksheetName)
   parentTableau.extensions.settings.set("dataSourceName", dataSourceName)
   parentTableau.extensions.settings.set("usernameColumn", usernameColumn)
